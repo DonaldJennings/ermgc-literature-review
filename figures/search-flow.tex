@@ -1,0 +1,29 @@
+% search-flow.tex -- search and selection flow (numbers from search-numbers.tex)
+\begin{tikzpicture}[
+    node distance = 4mm and 3mm,
+    box/.style  = {draw, rounded corners=2pt, align=center, font=\footnotesize,
+                   text width=36mm, minimum height=9mm, inner sep=2pt},
+    side/.style = {box, text width=22mm, fill=gray!10},
+    flow/.style = {-{Stealth[length=1.8mm]}, thick},
+    line/.style = {thick},
+]
+\newcommand{\flowN}[1]{\textit{n}\,=\,#1}
+\node[box] (seed) {Seeds, citation tracking\\and targeted searches\\\flowN{\nStageOne}};
+\node[box, right=of seed] (db) {Coverage check:\\IEEE Xplore and ACM DL\\\flowN{\nScreened} screened, \nAdded{} new};
+\node[box, below=10mm of $(seed.south)!0.5!(db.south)$, anchor=north] (incl)
+  {Included in review\\\flowN{\nIncluded}};
+\node[side, right=of incl] (excl) {Excluded\\\flowN{\nExcluded}};
+\node[box, below=6mm of incl.south, anchor=north, xshift=-20mm] (appr)
+  {Implementation studies\\appraised in full\\\flowN{\nAppraised}};
+\node[box, below=6mm of incl.south, anchor=north, xshift=20mm] (ctx)
+  {Method, context and\\background\\\flowN{\nContext}};
+\coordinate (merge) at ($(incl.north)+(0,4mm)$);
+\draw[line] (seed.south) |- (merge);
+\draw[line] (db.south) |- (merge);
+\draw[flow] (merge) -- (incl.north);
+\draw[flow] (incl) -- (excl);
+\coordinate (split) at ($(incl.south)+(0,-3mm)$);
+\draw[line] (incl.south) -- (split);
+\draw[flow] (split) -| (appr.north);
+\draw[flow] (split) -| (ctx.north);
+\end{tikzpicture}

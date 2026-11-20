@@ -1,6 +1,6 @@
 \documentclass[conference]{IEEEtran}
 
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 
 
 
@@ -23,6 +23,7 @@
 \usepackage{todonotes}
 
 \usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
+\input{search-numbers.tex}
 
 % *** SUBFig PACKAGES ***
 \ifCLASSOPTIONcompsoc
@@ -62,9 +63,9 @@
 
 % AUTHOR
 \author{\IEEEauthorblockN{Donald Jennings, s2081546}
-\IEEEauthorblockA{Sensing, Processing, and AI for Defence and Security - Doctorate of Engineering\\
-University of Edinburgh \\ Leonardo UK Ltd
-}}
+  \IEEEauthorblockA{Sensing, Processing, and AI for Defence and Security - Doctorate of Engineering\\
+    University of Edinburgh \\ Leonardo UK Ltd
+  }}
 
 % make the title area
 \maketitle
@@ -72,15 +73,16 @@ University of Edinburgh \\ Leonardo UK Ltd
 % As a general rule, do not put math, special symbols or citations
 % in the abstract
 \begin{abstract}
-Modern radar systems are no longer limited by what they can sense, but by how fast they can process what they sense. As radar becomes critical to airborne systems, autonomous vehicles, and weather monitoring, handling growing data volumes in real-time has become a pressing engineering challenge. Graphics processing units offer an order-of-magnitude leap in throughput for radar signal processing techniques, yet most published work reports speed-ups without examining why some implementations succeed whereas others stall, often on memory and data movement rather than arithmetic. 
-\newline
-\newline
-[After writing methodology / surveying papers, add some statistics on number papers, year range, number databases / journal etc]
+  Modern radar systems are no longer limited by what they can sense, but by how fast they can process what they sense. As radar becomes critical to airborne systems, autonomous vehicles, and weather monitoring, handling growing data volumes in real-time has become a pressing engineering challenge. Graphics processing units offer an order-of-magnitude leap in throughput for radar signal processing techniques, yet most published work reports speed-ups without examining why some implementations succeed whereas others stall, often on memory and data movement rather than arithmetic.
+  \newline
+  \newline
+  Drawing on \nIncluded{} studies published between 1995 and 2026, identified through citation tracking, with searches of IEEE Xplore and the ACM
+  Digital Library to check coverage, the review appraises \nAppraised{} GPU implementation studies against six reporting criteria.
 \end{abstract}
 % no keywords
 
 \begin{IEEEkeywords}
-Graphics processing units, memory hierarchy, radar signal processing, real-time systems
+  Graphics processing units, memory hierarchy, radar signal processing, real-time systems
 \end{IEEEkeywords}
 
 
