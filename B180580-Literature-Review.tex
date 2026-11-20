@@ -146,11 +146,11 @@ complex data, one read and one write of the cube per stage).}
 \toprule
 Stage & Dominant operation & AI (FLOP/B) & Typically bound by \\
 \midrule
-Pulse compression & Batched FFT, pointwise multiply & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply) & Memory bandwidth \cite{venterSoftwaredefinedPulsedopplerRadar2014} \\
-Corner turn & Transpose & 0 & Memory bandwidth \cite{venterSoftwaredefinedPulsedopplerRadar2014} \\
-Doppler processing & Short batched FFTs ($N{=}64$--$512$) & $\approx$2--3 & Memory bandwidth; launch overhead for small bursts \cite{venterSoftwaredefinedPulsedopplerRadar2014} \\
-Envelope, scaling, windowing & Elementwise & $<$0.5 & Memory bandwidth \cite{venterSoftwaredefinedPulsedopplerRadar2014,denhamWeatherRadarData2018} \\
-CA-CFAR & Sliding-window average & Low; grows with window size & Memory; compute for large windows \cite{venterSoftwaredefinedPulsedopplerRadar2014} \\
+Pulse compression & Batched FFT, pointwise multiply & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply) & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
+Corner turn & Transpose & 0 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
+Doppler processing & Short batched FFTs ($N{=}64$--$512$) & $\approx$2--3 & Memory bandwidth; launch overhead for small bursts \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
+Envelope, scaling, windowing & Elementwise & $<$0.5 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018} \\
+CA-CFAR & Sliding-window average & Low; grows with window size & Memory; compute for large windows \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
 STAP & Covariance, batched small solves & Moderate & On-chip memory, occupancy \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015} \\
 SAR backprojection & Per-pixel gather and interpolation & High; $O(N^3)$ work & Computation \cite{leeArchitectureExplorationBackprojection2021,parkEfficientBackprojectionbasedSynthetic2012} \\
 \bottomrule
@@ -187,7 +187,7 @@ SAR backprojection & Per-pixel gather and interpolation & High; $O(N^3)$ work & 
 %------- CITATIONS ----------
 
 \bibliographystyle{IEEEtran}
-\bibliography{ref}
+\bibliography{EMRGC-Lit-Review}
 
 
 
