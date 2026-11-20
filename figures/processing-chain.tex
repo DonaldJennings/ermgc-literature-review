@@ -1,0 +1,52 @@
+\begin{tikzpicture}[
+    node distance = 6mm and 5mm,
+    block/.style  = {draw, rounded corners=2pt, fill=white, align=center,
+                     minimum width=20mm, minimum height=11mm, font=\small},
+    flow/.style   = {-{Stealth[length=2.2mm]}, thick},
+    group/.style  = {draw=none, rounded corners=4pt, inner sep=3mm},
+    glabel/.style = {font=\footnotesize\itshape, anchor=south west},
+    dlabel/.style = {font=\scriptsize, midway, above, inner sep=1pt},
+]
+
+% ---- Row 1: analogue front end and digital front end -------------------
+\node[block] (array) {Antenna\\array};
+\node[block, right=of array] (rf)  {RF front end\\(LNA, filter)};
+\node[block, right=17mm of rf] (adc) {ADC};
+\node[block, right=of adc] (ddc) {Digital\\downconversion};
+
+% ---- Row 2: GPU signal processing and data processing ------------------
+\node[block, below=20mm of array] (pc)   {Pulse\\compression};
+\node[block, right=of pc]        (dop)  {Doppler\\processing};
+\node[block, right=of dop]       (dbf)  {Digital\\beamforming\\(STAP)};
+\node[block, right=of dbf]       (cfar) {CFAR\\detection};
+\node[block, right=17mm of cfar]  (trk)  {Tracking \&\\data processing};
+
+% ---- Data flow ----------------------------------------------------------
+\draw[flow] (array) -- (rf);
+\draw[flow] (rf)  -- node[dlabel]{analogue} (adc);
+\draw[flow] (adc) -- (ddc);
+\draw[flow] (ddc.south) -- ++(0,-6mm) -| node[pos=0.25, below, font=\scriptsize]{per-element I/Q data} (pc.north);
+\draw[flow] (pc)  -- (dop);
+\draw[flow] (dop) -- (dbf);
+\draw[flow] (dbf) -- (cfar);
+\draw[flow] (cfar) -- node[dlabel]{detections} (trk);
+
+% ---- Processing domains (drawn behind the blocks) -----------------------
+\begin{scope}[on background layer]
+  \node[group, fill=gray!15,   fit=(array)(rf)] (gA) {};
+  \node[group, fill=blue!10,   fit=(adc)(ddc)]  (gB) {};
+  \node[group, fill=green!12,  fit=(pc)(cfar)] (gC) {};
+  \node[group, fill=orange!15, fit=(trk)]       (gD) {};
+\end{scope}
+\node[glabel] at (gA.north west) {Analogue};
+\node[glabel] at (gB.north west) {Digital front end (FPGA)};
+\node[glabel] at (gC.north west) {CPU / GPU Signal Processing Chain};
+\node[glabel] at (gD.north west) {Data processing (CPU)};
+
+% ---- Data-volume annotation ---------------------------------------------
+\draw[-{Stealth}, thick, gray]
+  ($(gC.south west)+(0,-4mm)$) -- ($(gC.south west -| gD.east)+(0,-4mm)$)
+  node[midway, below, font=\footnotesize, text=gray!70!black]
+  {data volume decreases along the chain; processing becomes more irregular};
+
+\end{tikzpicture}
