@@ -58,7 +58,7 @@
 
 \begin{document}
 
-\title{GPU-Accelerated Radar Signal Processing: A survey of implementation strategies}
+\title{GPU-Accelerated Radar Signal Processing: A Critical Review}
 
 % AUTHOR
 \author{\IEEEauthorblockN{Donald Jennings, s2081546}
@@ -84,105 +84,14 @@ Graphics processing units, memory hierarchy, radar signal processing, real-time 
 \end{IEEEkeywords}
 
 
-\section{Introduction}
-Radar underpins applications ranging from air defence and space situational awareness to weather forecasting and automotive safety \cite{palmerHorusFullyDigital2023, engelsAutomotiveRadarSignal2021,richardsPreviewBasicRadar2022}. At the core of every radar is a signal processing chain that transforms raw echoes into usable information for the operator. That chain typically comprises pulse compression, doppler processing, beamforming, and detection through a Constant False Alarm Rate (CFAR) algorithms. Additionally, in imaging systems, synthetic aperture image formation transforms the echoes into images \cite{richardsPreviewBasicRadar2022}. The computational demands of this chain have risen sharply over the past two decades, for two reasons. First, trends in front-end design such as wider bandwidths and per-element / full digitisation mean that far larger volumes of data now reach the processor \cite{fultonDigitalPhasedArrays2016, uekiDataChallengeFully2025}. Secondly, the algorithms themselves have become much more sophisticated. The increasing reliance on adaptive techniques instead of fixed, non-adaptive techniques has meant that cost begins to scale steeply with problem size \cite{bensonGPUbasedSpacetimeAdaptive2013a, fultonDigitalPhasedArrays2016}. Conseuqnetly, more of the receive chain is now implemented in software, a shift captured by the term software-defined radio, or in this case software-defined radar \cite{mitolaSoftwareRadioArchitecture1995}.
-
-Meeting these demands within real-time deadlines has driven radar processing towards heterogeneous architectures that pair a host processor with dedicated accelerators \cite{mittalSurveyCPUGPUHeterogeneous2015}. Field Programmable Gate Arrays (FPGAs) and digital signal processors (DSP) have long filled this role \cite{yuImplementationRealTimePhased2016}. However, the development cost of these is high and provides limited flexibility, which fits poorly with the trend towards adaptive processing chains \cite{perdanaSurveyGraphicsProcessing2017,yuImplementationRealTimePhased2016}. Graphics Processing Units (GPUs) have emerged as an attractive alternative. These are commercial off-the-shelf (COTS) devices that offer a high arithmetic throughput as well as a rich software stack. GPUs, however, do typically come with a higher power draw than FPGAs and DSPs  \cite{perdanaSurveyGraphicsProcessing2017}. The literature also reports a substantial speedup for radar workloads \cite{perdanaSurveyGraphicsProcessing2017,zhaoGPUAcceleratedSignalProcessing2023, zhangAcceleratingSpaceborneSAR2016a}.
-
-Despite these promising results, the published work actually explains very little about why GPU implementations perform as they do. Many stages of the radar chain, such as the corner turn, envelope detection and the windowing steps of each transform perform little arithmetic per byte of data moved, leading their performance to be bounded by memory and data movement rather than by computation \cite{williamsRooflineInsightfulVisual2009, venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. Despite this, the existing studies typically evaluate them as if they were bottlenecked by the amount of computation. Several report speed-ups against serial single-threaded CPU baselines \cite{zhaoGPUAcceleratedSignalProcessing2023, denhamWeatherRadarData2018, zhangAcceleratingSpaceborneSAR2016a}, a practice shown to overstate the advantage of GPUs \cite{leeDebunking100XGPU2010}. Host device transfers are often left out of timings or counted inconsistently \cite{greggWhereDataWhy2011, venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, results are reported as per-stage timings without profiling \cite{zhaoGPUAcceleratedSignalProcessing2023}, and surveys of the field compile these timings without examining what limits the performance in each case \cite{perdanaSurveyGraphicsProcessing2017}. Very little implementations exploit the execution features the programming models provide, such as asynchronous streams \cite{zhaoGPUAcceleratedSignalProcessing2023, denhamWeatherRadarData2018}. As a result, it remains unclear which implementation strategies, rather than which hardware, actually drive the reported gains. Additionally, inconsistent benchmarking practices make results difficult to compare across studies \cite{hoeflerScientificBenchmarkingParallel2015}.
-
-This review addresses that gap from a computational rather than an algorithmic perspective. It asks which implementation strategies drive the reported performance gains, and what the current literature leaves unmeasured. Studies were identified through a structured search and citation tracking, each study was appraised against six reporting criteria informed by established benchmarking practices \cite{hoeflerScientificBenchmarkingParallel2015}. The review focuses on the processing between pulse compression and CFAR detection, with SAR imaging serving as a compute-intensive constrast. As a result, there are three main contributions from this paper: (i)~a characterisation of the radar chain as a computational workload, performing a per-stage characterisation to identify whether they are memory bound or compute bound (Section~\ref{sec:workload}); (ii)~an appraisal of how GPU performance is measured and reported, including the accounting of data movement (Sections~\ref{sec:reporting} and Section~\ref{sec:data}); and finally (iii)~the implementation strategies likely to matter but untested on current hardware, from which research questions are derived (Section~\ref{sec:execution} and Section~\ref{sec:gaps}).
-
-Section~\ref{sec:background} introduces the radar chain and the relevant GPU
-features, Section~\ref{sec:method} describes the method,
-Sections~\ref{sec:synthesis} and~\ref{sec:gaps} present the synthesis and gaps,
-and Section~\ref{sec:conclusion} concludes.
-
-[Add a brief explanation of the remainder paper structure]
-
-\section{Background}
-\label{sec:background}
-
-\subsection{The Radar Receive Chain}
-Fig.~\ref{fig:processing-chain} shows an exemplar receive chain of the considered in this review. After digital downconversion, the data for a single coherent processing interval (CPI) forms a complex-valued cube of $N_s$ fast-time samples, $N_p$ pulses and $N_c$ receive channels. This structure is referred to as the radar data cube, in which each element is an in-phase/quadrature sample \cite{richardsPreviewBasicRadar2022}. Each subsequent stage can be viewed as an operation along one or more axes of this cube. Pulse compression applies a matched filter along fast time, normally as a fast convolution. Doppler processing then applies an FFT along slow time, which in a row-major layout may require a corner turn operation to keep memory accesses contiguous. Beamforming combines the channel axis, either with fixed weights or adaptively through space-time adaptive processing (STAP), using an estimation of the covariance matrix and solves a linear system for each range cell. Finally, CFAR detection compares each cell with noise estimates from its neighbours in a sliding window algorithm, to set an adaptive detection threshold. The ordering of these stages may vary between systems; the post-Doppler STAP arrangement shown is common but by no means universal. In  In imaging systems, SAR image formation focuses the data into an image, either with FFT-based algorithms or by backprojecting every pulse onto every pixel \cite{richardsPreviewBasicRadar2022}.
-
-\begin{figure}[!t]
-    \centering
-    \resizebox{\columnwidth}{!}{\input{figures/processing-chain}}
-    \caption{Exemplar receive processing chain, with beamforming and subsequent
-             signal processing allocated to the GPU. Data volume decreases
-             along the chain.}
-    \label{fig:processing-chain}
-\end{figure}
-
-The data cube is a large structure. For example, a CPI with $N_c=64$, $N_s=4096$, and $N_p=128$, assuming a single-precision complex value (8-bits per sample) occupies $N_c\times N_s \times N_p \times 8\mathrm{B}\approx 268$MB. Assuming this is refreshed every 10ms, this is roughly $27GB/s$, about $85\%$ of the $31.5GB/s$ that a PCIe~4.0$\times$16 link provides in each direction. The data volume is not constant throughout the chain and falls sharply following detection processing. This review therefore focuses on the processing between pulse compression adn CFAR detection, where the data is largest and the processing most regular.
-
-\subsection{GPU Architecture Essentials}
-Terminology used follows NVIDIA's CUDA programming model although other vendors provide equivalent concepts. A GPU consists of many streaming mulitprocessors (SMs), each of which executes one or more bvlocks of threads. Threads within a block run in warps of 32 in a single-instruction multiple-threadn (SIMT) model. Rather than minimising the latency of individual threads, GPUs are designed to optimise the overall throughput. It does so by keeping many warps resident and switching between them. The ratio of resident warps to the maximum supported by an SM is known as \emph{occupancy}. High occupancy helps to hide latency but is not a goal in itself: kernels can run faster at lower occupancy when each thread has indepdennt work \cite{volkov}.
-
-In a discrete system, the GPU has its own memory reached over PCIe. Transfers are performed by direct memory access (DMA) from page-locked (pinned) host buffers. It is possible to overlap memory copies with computation by making use of streams. Unified memory is an alternative model where a single address space is presented to the CPU adn GPU and page migration is done on demand, wheras integrated system-on-chip (SoC) share physical DRAM between the two. On the device, a memory hierarchy is present: global memory (HBM or GDDR) is backed by an L2 cache shared by all SMs, and each SM also provides shared memory (controlled by the programmer). Bandwidth falls at each level outwards, most steeply across the host link: on the order of $2TB/s$ for HBM against $32GB/s$ per direction for PCIe4.
-
-Kernls can be either compute-bound or memory-bound. The classfiication that a kernel falls into depends on its operational intensity: the number of floating-point operations it performs per byte of memory traffic. The roofline model \cite{williamsRooflineInsightfulVisual2009} bounds attainable performance by the lower of the peak compute rate and the product of operational intensity and memory bandwidth. The point at which they meet is known as the ridge. For a typical, modern, data-center GPU this sits around $10$FLOP/byte (19.5TFLOPS/s and $\sim$2TB/s for an NVIDIA A100. Kernels below the ridge point are memory bound: making them faster means moving fewer bytes, not performing fewer operations. Section~\ref{sec:workload} applies the roofline model to each stage of hte radar chain.
-
-A GPU is made up of many streaming multiprocessors (SMs). SMs are effectively individual compute units that are responsible for executing a block. Blocks are made up of a group of threads, and are executed in \emph{warps} of 32 threads in lockstep - single-instruction,multiple-thread (SIMT). Rather than minimising per-thread latency, the GPU optimises memory latency by keeping many warps resident and switching between them. The amount of wraps that are resident compared to the maximum number of resident warps is known as \emph{occupancy}.
-
-\section{Methodology}
-\label{sec:method}
-
-\section{Critical Synthesis}
-\label{sec:synthesis}
-\subsection{The Radar Chain as a Workload}
-\label{sec:workload}
-
-Table~\ref{tab:workload} places each stage of the pipeline against the roofline of Section~\ref{sec:background}. The estimates assume single-precision complex data and one read and one write of the data cube per stage; a complex FFT of length $N$ performs about $5\log_2N$ operations on $16N$ bytes, giving roughly $0.31\log_2N$\,FLOP/byte. Every front end stage falls well below the ridge point of about 10\,FLOP/byte. The FFTs in pulse compression and doppler processing reach only about 2--4\,FLOP/byte, the corner turn performs no arithmetic at all. Venter measured this directly - the corner turn and envelope kernels were all bandwidth-limited, with the best corner turn reaching 97\% of a plain copy kernels bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. Denham et al.\ found polarimetric weather-radar products similar memory bound, achieving only about 6\% global-memory efficiency because of the array-of-structures layout \cite{denhamWeatherRadarData2018}. For these stages, speed comes from moving fewer bytes, through fused passes and suitable data layouts, rather than from more arithmetic througput.
-
-\begin{table}[t]
-\caption{First-order characterisation of radar chain stages (single-precision
-complex data, one read and one write of the cube per stage).}
-\label{tab:workload}
-\centering
-\footnotesize
-\begin{tabular}{@{}p{1.6cm}p{2.1cm}p{1.4cm}p{2.0cm}@{}}
-\toprule
-Stage & Dominant operation & AI (FLOP/B) & Typically bound by \\
-\midrule
-Pulse compression & Batched FFT, pointwise multiply & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply) & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-Corner turn & Transpose & 0 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-Doppler processing & Short batched FFTs ($N{=}64$--$512$) & $\approx$2--3 & Memory bandwidth; launch overhead for small bursts \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-Envelope, scaling, windowing & Elementwise & $<$0.5 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018} \\
-CA-CFAR & Sliding-window average & Low; grows with window size & Memory; compute for large windows \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-STAP & Covariance, batched small solves & Moderate & On-chip memory, occupancy \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015} \\
-SAR backprojection & Per-pixel gather and interpolation & High; $O(N^3)$ work & Computation \cite{leeArchitectureExplorationBackprojection2021,parkEfficientBackprojectionbasedSynthetic2012} \\
-\bottomrule
-\end{tabular}
-\end{table}
-\subsection{How Performance is Reported}
-\label{sec:reporting}
-\subsection{Where the Data lives}
-\label{sec:data}
-\subsection{How the GPU is driven}
-\label{sec:execution}
-\subsection{Precision}
-\label{sec:precision}
-\section{Gaps and Research Questions}
-\label{sec:gaps}
-\section{Conclusions}
-\label{sec:conclusion}
-\section{Reflective Statement}
-\label{sec:reflection}
-
-\subsection{Mapping the Chain to the Hardware}
-
-\section{Methodology}
-
-\section{Critical Synthesis}
-
-\section{Gap Analysis \& Research Proposal}
-
-\section{Conclusions}
-
-\section{Reflective Statement}
-\label{sec:conc}
+\input{sections/01-introduction}
+\input{sections/02-background}
+\input{sections/03-methodology}
+\input{sections/04-critical-synthesis}
+\input{sections/05-gaps}
+\input{sections/06-conclusions}
+\input{sections/07-reflective-statement}
+\input{sections/08-outline-draft}
 
 %------- CITATIONS ----------
 
