@@ -3,7 +3,7 @@
 
 \subsection{Search Strategy}
 The corpus of studies was built in two stages. First, papers already held were used as seeds \cite{zhaoGPUAcceleratedSignalProcessing2023, bensonGPUbasedSpacetimeAdaptive2013a, perdanaSurveyGraphicsProcessing2017}. The reference lists for these papers were followed backwards,
-citing and same-author work was followed forwards. These were supplemented by targeted searched on the themes raised in Sections ~\ref{sec:intro} on data movement, execution models, auto-tuning, reduced precision and timing measurements. Adjacent domains with mature GPU
+citing and same-author work was followed forwards. These were supplemented by targeted searched on the themes raised in Section~\ref{sec:intro} on data movement, execution models, auto-tuning, reduced precision and timing measurements. Adjacent domains with mature GPU
 streaming practice, namely radio astronomy were included where they hold the strongest evidence for operations radar shares. Secondly,
 to make the search reproducible, two strings were run in IEEE Xplore and the ACM Digital Library
 \begin{itemize}
@@ -24,9 +24,9 @@ baseline, since a speed-up means little without the absolute performance of
 its base case; the depth of analysis, since bounds such as the roofline make a
 result interpretable; and the timing statistics, since nondeterministic
 measurements need a measure of spread
-\cite{hoeflerScientificBenchmarkingParallel2015}.
+\cite{hoeflerScientificBenchmarkingParallel2015a}.
 Whether transfers are timed follows Gregg and Hazelwood
-\cite{greggWhereDataWhy2011}.
+\cite{greggWhereDataWhy2011a}.
 The execution model and energy measurement were added from the review question
 itself: the first is an implementation strategy, and the second a cost that is
 rarely measured directly.
@@ -37,30 +37,42 @@ independently checked; verifying every matrix row against the full text
 partly mitigates this.
 
 \begin{table}[t]
-  \caption{Appraisal criteria applied to each implementation study.}
+  \caption{Appraisal criteria applied to each implementation study}
   \label{tab:rubric}
   \centering
   \footnotesize
-  \begin{tabularx}{\columnwidth}{@{}p{1.6cm}Xp{1.5cm}@{}}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}Xl@{}}
     \toprule
-    Criterion         & Recorded values                                         & Basis \\
+    \textbf{Criterion} & \textbf{Recorded values} & \textbf{Basis} \\
     \midrule
-    CPU baseline      & none; serial; single-core vectorised; optimised
-    multithreaded; own GPU version
-                      & \cite{hoeflerScientificBenchmarkingParallel2015,
-                          leeDebunking100XGPU2010}                 \\
-    Transfers timed   & yes; no; unclear
-                      & \cite{greggWhereDataWhy2011}                                    \\
-    Analysis depth    & stage timings; profiler metrics; \% of peak or roofline
-                      & \cite{hoeflerScientificBenchmarkingParallel2015,
-                          williamsRooflineInsightfulVisual2009}                 \\
-    Execution model   & sequential; streams; graphs; persistent kernels
-                      & review scope                                                    \\
-    Energy            & none; TDP proxy; measured
-                      & \cite{hoeflerScientificBenchmarkingParallel2015}                \\
-    Timing statistics & mean only; mean $\pm$ spread; distribution,
-    percentiles or worst case
-                      & \cite{hoeflerScientificBenchmarkingParallel2015}                \\
+    CPU baseline
+      & None, serial, single-core vectorised, optimised multithreaded,
+        or own GPU version
+      & \cite{hoeflerScientificBenchmarkingParallel2015a,
+          leeDebunking100XGPU2010b} \\
+    \addlinespace
+    Transfers timed
+      & Yes, no, or unclear
+      & \cite{greggWhereDataWhy2011a} \\
+    \addlinespace
+    Analysis depth
+      & Stage timings, profiler metrics, or \% of peak / roofline
+      & \cite{hoeflerScientificBenchmarkingParallel2015a,
+          williamsRooflineInsightfulVisual2009a} \\
+    \addlinespace
+    Execution model
+      & Sequential, streams, CUDA Graphs, or persistent kernels
+      & This review \\
+    \addlinespace
+    Energy
+      & None, TDP proxy, or measured
+      & \cite{hoeflerScientificBenchmarkingParallel2015a} \\
+    \addlinespace
+    Timing statistics
+      & Mean only, mean $\pm$ spread, or distribution / percentiles /
+        worst case
+      & \cite{hoeflerScientificBenchmarkingParallel2015a} \\
     \bottomrule
   \end{tabularx}
 \end{table}

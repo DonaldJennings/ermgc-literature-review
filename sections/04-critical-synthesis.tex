@@ -3,7 +3,7 @@
 \subsection{The Radar Chain as a Workload}
 \label{sec:workload}
 
-Table~\ref{tab:workload} places each stage of the pipeline against the roofline of Section~\ref{sec:background}. The estimates assume single-precision complex data and one read and one write of the data cube per stage; a complex FFT of length $N$ performs about $5\log_2N$ operations on $16N$ bytes, giving roughly $0.31\log_2N$\,FLOP/byte. Every front end stage falls well below the ridge point of about 10\,FLOP/byte. The FFTs in pulse compression and doppler processing reach only about 2--4\,FLOP/byte, the corner turn performs no arithmetic at all. Venter measured this directly - the corner turn and envelope kernels were all bandwidth-limited, with the best corner turn reaching 97\% of a plain copy kernels bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. Denham et al.\ found polarimetric weather-radar products similar memory bound, achieving only about 6\% global-memory efficiency because of the array-of-structures layout \cite{denhamWeatherRadarData2018}. For these stages, speed comes from moving fewer bytes, through fused passes and suitable data layouts, rather than from more arithmetic througput.
+Table~\ref{tab:workload} places each stage of the pipeline against the roofline of Section~\ref{sec:background}. The estimates assume single-precision complex data and one read and one write of the data cube per stage; a complex FFT of length $N$ performs about $5\log_2N$ operations on $16N$ bytes, giving roughly $0.31\log_2N$\,FLOP/byte. Every front end stage falls well below the ridge point of about 10\,FLOP/byte. The FFTs in pulse compression and doppler processing reach only about 2--4\,FLOP/byte, the corner turn performs no arithmetic at all. Venter measured this directly - the corner turn and envelope kernels were all bandwidth-limited, with the best corner turn reaching 97\% of a plain copy kernels bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. Denham et al.\ found polarimetric weather-radar products similar memory bound, achieving only about 6\% global-memory efficiency because of the array-of-structures layout \cite{denhamWeatherRadarData2018a}. For these stages, speed comes from moving fewer bytes, through fused passes and suitable data layouts, rather than from more arithmetic througput.
 
 \begin{table}[t]
 \caption{First-order characterisation of radar chain stages (single-precision
@@ -18,10 +18,10 @@ Stage & Dominant operation & AI (FLOP/B) & Typically bound by \\
 Pulse compression & Batched FFT, pointwise multiply & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply) & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
 Corner turn & Transpose & 0 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
 Doppler processing & Short batched FFTs ($N{=}64$--$512$) & $\approx$2--3 & Memory bandwidth; launch overhead for small bursts \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-Envelope, scaling, windowing & Elementwise & $<$0.5 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018} \\
+Envelope, scaling, windowing & Elementwise & $<$0.5 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018a} \\
 CA-CFAR & Sliding-window average & Low; grows with window size & Memory; compute for large windows \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-STAP & Covariance, batched small solves & Moderate & On-chip memory, occupancy \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015} \\
-SAR backprojection & Per-pixel gather and interpolation & High; $O(N^3)$ work & Computation \cite{leeArchitectureExplorationBackprojection2021,parkEfficientBackprojectionbasedSynthetic2012} \\
+STAP & Covariance, batched small solves & Moderate & On-chip memory, occupancy \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015b} \\
+SAR backprojection & Per-pixel gather and interpolation & High; $O(N^3)$ work & Computation \cite{leeArchitectureExplorationBackprojection2021a,parkEfficientBackprojectionbasedSynthetic2012} \\
 \bottomrule
 \end{tabular}
 \end{table}

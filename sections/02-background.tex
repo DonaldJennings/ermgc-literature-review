@@ -37,7 +37,7 @@ A CPI with $N_c=64$ channels, $N_s=4096$ samples and $N_p=128$ pulses, stored
 as single-precision complex values (8\,B per sample), occupies about 268\,MB.
 Refreshed every 10\,ms, this is roughly 27\,GB/s, about 85\% of the 31.5\,GB/s
 theoretical peak of a PCIe~4.0~$\times$16 link in each direction
-\cite{CITEKEY-AMPERE-WHITEPAPER}.
+\cite{nvidiaA100TensorCore2020}.
 Measured transfer rates are typically 70--75\% of peak
 \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, so the host link alone leaves
 little headroom.
@@ -58,8 +58,8 @@ The ratio of resident warps to the maximum an SM supports is its
 \emph{occupancy}.
 High occupancy helps hide latency but is not a goal in itself: kernels can run
 faster at lower occupancy when each thread has more independent work
-\cite{volkov}, as Denham et al.\ found for weather-radar products
-\cite{denhamWeatherRadarData2018}.
+\cite{volkovUnderstandingLatencyHiding2016}, as Denham et al.\ found for weather-radar products
+\cite{denhamWeatherRadarData2018a}.
 
 In a discrete system the GPU has its own memory, reached over PCIe.
 Transfers use direct memory access (DMA) from page-locked (pinned) host
@@ -73,13 +73,13 @@ On the device, global memory (HBM or GDDR) is backed by an L2 cache shared by
 all SMs, and each SM also has programmer-managed shared memory.
 Bandwidth falls at each level outwards, most steeply across the host link:
 about 2\,TB/s for HBM on an NVIDIA A100 against 31.5\,GB/s per direction for
-PCIe~4.0 \cite{NVIDIAA100Tensor, CITEKEY-AMPERE-WHITEPAPER}.
+PCIe~4.0 \cite{NVIDIAA100Tensor, nvidiaA100TensorCore2020}.
 
 A kernel is compute-bound or memory-bound depending on its operational
 intensity: the floating-point operations it performs per byte of DRAM traffic.
 The roofline model bounds attainable performance by the lower of the peak
 compute rate and the product of operational intensity and memory bandwidth
-\cite{williamsRooflineInsightfulVisual2009}; the two meet at the ridge point.
+\cite{williamsRooflineInsightfulVisual2009a}; the two meet at the ridge point.
 For an NVIDIA A100 80\,GB (19.5\,TFLOP/s FP32, 2.0\,TB/s) the ridge sits at
 about 10\,FLOP/byte \cite{NVIDIAA100Tensor}.
 Kernels below it are memory-bound: making them faster means moving fewer bytes,
