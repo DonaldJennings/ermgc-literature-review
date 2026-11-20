@@ -9,11 +9,25 @@
 
     "latex-workshop.latex.watch.usePolling": true,
 
-    "editor.formatOnSave": false,
+    "editor.formatOnSave": true,
 
     "[latex]": {
         "editor.wordWrap": "on",
+        "editor.defaultFormatter": "James-Yu.latex-workshop",
+        "editor.formatOnSave": true,
+        "editor.insertSpaces": true,
         "editor.tabSize": 2,
         "editor.insertSpaces": true
     }
+
+    "latex-workshop.formatting.latex": "latexindent",
+
+"latex-workshop.formatting.latexindent.path": "latexindent",
+
+"latex-workshop.formatting.latexindent.args": [
+    "-c",
+    "%DIR%/",
+    "%TMPFILE%",
+    "-y=defaultIndent: '%INDENT%'"
+]
 }

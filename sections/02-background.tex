@@ -2,47 +2,86 @@
 \label{sec:background}
 
 \subsection{The Radar Receive Chain}
-Fig.~\ref{fig:processing-chain} shows an exemplar receive chain considered in this review. After digital downconversion,
-the data for one coherent processing interval (CPI) form a complex-valued cube of $N_s$ fast-time samples, $N_p$ pulses,
-and $N_c$ receive channels, each element an in-phase/quadrature (IQ) sample \cite{richardsPreviewBasicRadar2022}.
-Each stage then operates along one or more axes of this cube. Pulse compression applies a matched filter along fast
-time, normally as a fast convolution. Doppler processing applies an FFT along slow time; in a row-major layout this
-needs a corner turn (transpose) to keep memory access contiguous. Beamforming combines the channel axis, either with
-fixed weights or adaptively through Space-Time Adaptive Processing (STAP), which estimates a covariance matrix and solves a linear system for each range cell. Finally, CFAR detection compares each cell with a noise estimate drawn from 
-its neighbouring cells in a sliding window formation to set an adaptive detection threshold. In SAR, image formation 
-uses FFT-based algorithms or backprojects every pulse onto every pixel to generate an image \cite{richardsPreviewBasicRadar2022}.
+Fig.~\ref{fig:processing-chain} shows an exemplar receive chain considered in
+this review.
+After digital downconversion, the data for one coherent processing interval
+(CPI) form a complex-valued cube of $N_s$ fast-time samples, $N_p$ pulses, and
+$N_c$ receive channels, each element an in-phase/quadrature (IQ) sample
+\cite{richardsPreviewBasicRadar2022}.
+Each stage then operates along one or more axes of this cube.
+Pulse compression applies a matched filter along fast time, normally as a fast
+convolution.
+Doppler processing applies an FFT along slow time; in a row-major layout this
+needs a corner turn (transpose) to keep memory access contiguous.
+Beamforming combines the channel axis, either with fixed weights or adaptively
+through Space-Time Adaptive Processing (STAP), which estimates a covariance
+matrix and solves a linear system for each range cell.
+Finally, CFAR detection compares each cell with a noise estimate drawn from its
+neighbouring cells in a sliding window to set an adaptive detection threshold.
+In SAR, image formation uses FFT-based algorithms or backprojects every pulse
+onto every pixel to generate an image \cite{richardsPreviewBasicRadar2022}.
 
 \begin{figure}[!t]
     \centering
     \resizebox{\columnwidth}{!}{\input{figures/processing-chain}}
-    \caption{Exemplar receive processing chain, with beamforming and subsequent
-             signal processing allocated to the GPU. Data volume decreases
-             along the chain.}
+    \caption{Exemplar receive chain.
+        The stages from pulse compression to CFAR detection, the focus of this review,
+        run on the CPU and GPU; data volume falls along the chain as processing becomes
+        more irregular.
+    }
     \label{fig:processing-chain}
 \end{figure}
 
-
-The data cube is large. A CPI with $N_c=64$ channels,
-$N_s=4096$ samples and $N_p=128$ pulses, stored as
-single-precision complex values (8\,B per sample),
-occupies about 268\,MB. Refreshed every 10\,ms, this is
-roughly 27\,GB/s, about 85\% of the 31.5\,GB/s
-theoretical peak of a PCIe~4.0~$\times$16 link in each
-direction \cite{CITEKEY-AMPERE-WHITEPAPER}. Measured
-transfer rates are typically 70--75\% of peak
-\cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, so the host
-link alone leaves little headroom. The data volume then
-falls along the chain, as beamforming combines the
-channels and detection reduces the cube to a list of
-detections.
-
+The data cube is large.
+A CPI with $N_c=64$ channels, $N_s=4096$ samples and $N_p=128$ pulses, stored
+as single-precision complex values (8\,B per sample), occupies about 268\,MB.
+Refreshed every 10\,ms, this is roughly 27\,GB/s, about 85\% of the 31.5\,GB/s
+theoretical peak of a PCIe~4.0~$\times$16 link in each direction
+\cite{CITEKEY-AMPERE-WHITEPAPER}.
+Measured transfer rates are typically 70--75\% of peak
+\cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, so the host link alone leaves
+little headroom.
+The data volume then falls along the chain, as beamforming combines the
+channels and detection reduces the cube to a list of detections.
 
 \subsection{GPU Architecture Essentials}
-Terminology used follows NVIDIA's CUDA programming model although other vendors provide equivalent concepts. A GPU consists of many streaming mulitprocessors (SMs), each of which executes one or more bvlocks of threads. Threads within a block run in warps of 32 in a single-instruction multiple-threadn (SIMT) model. Rather than minimising the latency of individual threads, GPUs are designed to optimise the overall throughput. It does so by keeping many warps resident and switching between them. The ratio of resident warps to the maximum supported by an SM is known as \emph{occupancy}. High occupancy helps to hide latency but is not a goal in itself: kernels can run faster at lower occupancy when each thread has indepdennt work \cite{volkov}.
+Terminology follows NVIDIA's CUDA programming model; other vendors provide
+equivalent concepts.
+A GPU consists of many streaming multiprocessors (SMs), each executing one or
+more blocks of threads.
+Threads within a block run in warps of 32 under a single-instruction,
+multiple-thread (SIMT) model.
+Rather than minimising the latency of individual threads, the GPU maximises
+throughput by keeping many warps resident and switching between them to hide
+memory latency.
+The ratio of resident warps to the maximum an SM supports is its
+\emph{occupancy}.
+High occupancy helps hide latency but is not a goal in itself: kernels can run
+faster at lower occupancy when each thread has more independent work
+\cite{volkov}, as Denham et al.\ found for weather-radar products
+\cite{denhamWeatherRadarData2018}.
 
-In a discrete system, the GPU has its own memory reached over PCIe. Transfers are performed by direct memory access (DMA) from page-locked (pinned) host buffers. It is possible to overlap memory copies with computation by making use of streams. Unified memory is an alternative model where a single address space is presented to the CPU adn GPU and page migration is done on demand, wheras integrated system-on-chip (SoC) share physical DRAM between the two. On the device, a memory hierarchy is present: global memory (HBM or GDDR) is backed by an L2 cache shared by all SMs, and each SM also provides shared memory (controlled by the programmer). Bandwidth falls at each level outwards, most steeply across the host link: on the order of $2TB/s$ for HBM against $32GB/s$ per direction for PCIe4.
+In a discrete system the GPU has its own memory, reached over PCIe.
+Transfers use direct memory access (DMA) from page-locked (pinned) host
+buffers; pageable memory is first staged through a pinned buffer, which is
+slower \cite{gonzalezCUDALibraryT2OURNAMINT}.
+Copies can overlap with computation when issued in separate streams.
+Unified memory instead presents a single address space to the CPU and GPU and
+migrates pages on demand, whereas an integrated system-on-chip (SoC) shares
+physical DRAM between the two \cite{yangDistributedRealTimeImage2022a}.
+On the device, global memory (HBM or GDDR) is backed by an L2 cache shared by
+all SMs, and each SM also has programmer-managed shared memory.
+Bandwidth falls at each level outwards, most steeply across the host link:
+about 2\,TB/s for HBM on an NVIDIA A100 against 31.5\,GB/s per direction for
+PCIe~4.0 \cite{NVIDIAA100Tensor, CITEKEY-AMPERE-WHITEPAPER}.
 
-Kernls can be either compute-bound or memory-bound. The classfiication that a kernel falls into depends on its operational intensity: the number of floating-point operations it performs per byte of memory traffic. The roofline model \cite{williamsRooflineInsightfulVisual2009} bounds attainable performance by the lower of the peak compute rate and the product of operational intensity and memory bandwidth. The point at which they meet is known as the ridge. For a typical, modern, data-center GPU this sits around $10$FLOP/byte (19.5TFLOPS/s and $\sim$2TB/s for an NVIDIA A100. Kernels below the ridge point are memory bound: making them faster means moving fewer bytes, not performing fewer operations. Section~\ref{sec:workload} applies the roofline model to each stage of hte radar chain.
-
-A GPU is made up of many streaming multiprocessors (SMs). SMs are effectively individual compute units that are responsible for executing a block. Blocks are made up of a group of threads, and are executed in \emph{warps} of 32 threads in lockstep - single-instruction,multiple-thread (SIMT). Rather than minimising per-thread latency, the GPU optimises memory latency by keeping many warps resident and switching between them. The amount of wraps that are resident compared to the maximum number of resident warps is known as \emph{occupancy}.
-
+A kernel is compute-bound or memory-bound depending on its operational
+intensity: the floating-point operations it performs per byte of DRAM traffic.
+The roofline model bounds attainable performance by the lower of the peak
+compute rate and the product of operational intensity and memory bandwidth
+\cite{williamsRooflineInsightfulVisual2009}; the two meet at the ridge point.
+For an NVIDIA A100 80\,GB (19.5\,TFLOP/s FP32, 2.0\,TB/s) the ridge sits at
+about 10\,FLOP/byte \cite{NVIDIAA100Tensor}.
+Kernels below it are memory-bound: making them faster means moving fewer bytes,
+not performing fewer operations.
+Section~\ref{sec:workload} applies this model to each stage of the chain.

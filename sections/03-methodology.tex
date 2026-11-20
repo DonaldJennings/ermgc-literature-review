@@ -1,3 +1,66 @@
 \section{Methodology}
 \label{sec:method}
 
+\subsection{Search Strategy}
+The corpus of studies was built in two stages. First, papers already held were used as seeds \cite{zhaoGPUAcceleratedSignalProcessing2023, bensonGPUbasedSpacetimeAdaptive2013a, perdanaSurveyGraphicsProcessing2017}. The reference lists for these papers were followed backwards,
+citing and same-author work was followed forwards. These were supplemented by targeted searched on the themes raised in Sections ~\ref{sec:intro} on data movement, execution models, auto-tuning, reduced precision and timing measurements. Adjacent domains with mature GPU
+streaming practice, namely radio astronomy were included where they hold the strongest evidence for operations radar shares. Secondly,
+to make the search reproducible, two strings were run in IEEE Xplore and the ACM Digital Library
+\begin{itemize}
+  \item (GPU OR CUDA OR GPGPU) AND (radar or ``synthetic aperture'' OR STAP OR CFAR OR ``pulse compression'' OR beamforming)
+  \item (GPU OR CUDA) AND (roofline OR benchmarking OR ``unified memory'' OR ``CUDA Graphs'' OR auto-tuning)
+\end{itemize}
+
+These returned N1 and N2 records respectively, of which N3 were added to this study. Recent preprints were drawn from arXiv and are labelled for highlighting.
+
+\subsection{Selection}
+Studies were included if they (i)~implement or measure a radar or sensor signal processing stage on a GPU, or supply a high-performance computing method used to judge such work; (ii)~report quantitative performance and (iii)~ are peer-reviewed or , in the case of a thesis or technical report, contain a clear methodology. Issues surrounding certification, fault tolerance, real-time scheduling theory and performance portability were excluded as out of scope. A total of 73 items were identified, 35 of which are included in this review, spannig 1995 to 2026, with 21 published in 2016 or later.
+
+\subsection{Appraisal}
+Each of the 15 implementation studies was read in full and recorded in an
+evidence matrix against six criteria (Table~\ref{tab:rubric}).
+Three follow Hoefler and Belli's rules for interpretable benchmarking: the CPU
+baseline, since a speed-up means little without the absolute performance of
+its base case; the depth of analysis, since bounds such as the roofline make a
+result interpretable; and the timing statistics, since nondeterministic
+measurements need a measure of spread
+\cite{hoeflerScientificBenchmarkingParallel2015}.
+Whether transfers are timed follows Gregg and Hazelwood
+\cite{greggWhereDataWhy2011}.
+The execution model and energy measurement were added from the review question
+itself: the first is an implementation strategy, and the second a cost that is
+rarely measured directly.
+Cells record only what each paper states; anything unstated was recorded as
+unclear rather than inferred.
+The review had a single reviewer, so screening and appraisal were not
+independently checked; verifying every matrix row against the full text
+partly mitigates this.
+
+\begin{table}[t]
+  \caption{Appraisal criteria applied to each implementation study.}
+  \label{tab:rubric}
+  \centering
+  \footnotesize
+  \begin{tabularx}{\columnwidth}{@{}p{1.6cm}Xp{1.5cm}@{}}
+    \toprule
+    Criterion         & Recorded values                                         & Basis \\
+    \midrule
+    CPU baseline      & none; serial; single-core vectorised; optimised
+    multithreaded; own GPU version
+                      & \cite{hoeflerScientificBenchmarkingParallel2015,
+                          leeDebunking100XGPU2010}                 \\
+    Transfers timed   & yes; no; unclear
+                      & \cite{greggWhereDataWhy2011}                                    \\
+    Analysis depth    & stage timings; profiler metrics; \% of peak or roofline
+                      & \cite{hoeflerScientificBenchmarkingParallel2015,
+                          williamsRooflineInsightfulVisual2009}                 \\
+    Execution model   & sequential; streams; graphs; persistent kernels
+                      & review scope                                                    \\
+    Energy            & none; TDP proxy; measured
+                      & \cite{hoeflerScientificBenchmarkingParallel2015}                \\
+    Timing statistics & mean only; mean $\pm$ spread; distribution,
+    percentiles or worst case
+                      & \cite{hoeflerScientificBenchmarkingParallel2015}                \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

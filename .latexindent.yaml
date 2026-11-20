@@ -1,0 +1,67 @@
+# latexindent settings for this repo, used by LaTeX Workshop's
+# "Format Document" command (Shift+Alt+F). See .vscode/settings.json.
+#
+# Prose is laid out one sentence per line, and sentences longer than
+# 80 characters are wrapped. Lines stay readable without horizontal
+# scrolling, and git diffs show which sentence changed.
+# Line breaks inside a paragraph don't change the PDF.
+
+defaultIndent: "  "
+
+# Don't indent the body of the document environment.
+noAdditionalIndent:
+  document: 1
+
+# Don't pad table columns to line up the & signs; with long cells this
+# produces very wide lines.
+lookForAlignDelims:
+  tabular: 0
+  tabularx: 0
+
+modifyLineBreaks:
+  oneSentencePerLine:
+    manipulateSentences: 1
+    removeSentenceLineBreaks: 1
+    textWrapSentences: 1
+  textWrapOptions:
+    columns: 80
+
+# Don't treat these full stops as sentence ends: "et al.", "Fig.",
+# "Eq.", "Sec.", "cf.", "vs." (on top of the defaults e.g., i.e., etc.,
+# w.r.t.), or a full stop followed by a LaTeX command such as "\ ".
+fineTuning:
+  modifyLineBreaks:
+    betterFullStop: |-
+      (?x)
+      (?:
+        \.\)
+        (?!\h*[a-z])
+      )
+      |
+      (?:
+        (?<!
+          (?:
+            (?:[eE]\.[gG])
+            |
+            (?:[iI]\.[eE])
+            |
+            (?:etc)
+            |
+            (?:[wW]\.[rR]\.[tT])
+            |
+            (?:al)
+            |
+            (?:Fig|Eq|Sec|Ref|cf|vs)
+          )
+        )
+      )
+      \.
+      (?!
+        (?:
+          [a-zA-Z0-9-~,\\]
+          |
+          \),
+          |
+          \)\.
+        )
+      )
