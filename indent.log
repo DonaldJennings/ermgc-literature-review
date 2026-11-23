@@ -1,27 +1,28 @@
-INFO:  latexindent.exe version 4.0.3, 2026-10-04, a script to indent .tex files
-       latexindent.exe lives here: C:/texlive/2026/bin/windows/
-       Fri Nov 20 15:49:42 2026
-       Filename: c:/ermgc-literature-review/sections/__latexindent_temp_03-methodology.tex
+INFO:  latexindent version 3.24.7, 2025-08-15, a script to indent .tex files
+       latexindent lives here: /usr/share/texlive/texmf-dist/scripts/latexindent/
+       Mon Nov 23 12:07:52 2026
+       Filename: /home/s2081546/ermgc-literature-review/sections/__latexindent_temp_04-critical-synthesis.tex
 INFO:  Processing switches:
        -y|--yaml: YAML settings specified via command line
        -c|--cruft: cruft directory
-INFO:  Directory for backup files and log file c:\ermgc-literature-review\indent.log:
-       c:\ermgc-literature-review\
+INFO:  Directory for backup files and log file /home/s2081546/ermgc-literature-review/indent.log:
+       /home/s2081546/ermgc-literature-review/
 INFO:  YAML settings read: defaultSettings.yaml
-       Reading defaultSettings.yaml from C:/texlive/2026/bin/windows/defaultSettings.yaml
-       Reading defaultSettings.yaml (2nd attempt) from C:/texlive/2026/bin/windows/../../texmf-dist/scripts/latexindent/defaultSettings.yaml
-       and then, if necessary, C:/texlive/2026/bin/windows/LatexIndent/defaultSettings.yaml
+       Reading defaultSettings.yaml from /usr/share/texlive/texmf-dist/scripts/latexindent/defaultSettings.yaml
 INFO:  YAML reading settings
-       Home directory is C:\Users\DDJen
+       Home directory is /home/s2081546
        latexindent.pl didn't find indentconfig.yaml or .indentconfig.yaml
-       see all possible locations: https://latexindentpl.readthedocs.io/en/latest/sec-appendices.html#indentconfig-options
+       see all possible locations: https://latexindentpl.readthedocs.io/en/latest/sec-appendices.html#indentconfig-options)
 INFO:  YAML settings read: -y switch
        YAML setting: defaultIndent:'  '
        single-quoted string found in -y switch: '  ', substitute to   
-       Updating mainSetting with defaultIndent:   
+       Updating mainSettings with defaultIndent:   
+INFO:  Phase 1: searching for objects
+INFO:  Phase 2: finding surrounding indentation
+INFO:  Phase 3: indenting objects
+INFO:  Phase 4: final indentation check
 INFO:  Output routine:
        Not outputting to file; see -w and -o switches for more options.
        --------------
 INFO:  Please direct all communication/issues to:
-       https://github.com/cmhughes/latexindent.pl
-       documentation: https://latexindentpl.readthedocs.io/en/latest/
+        https://github.com/cmhughes/latexindent.pl

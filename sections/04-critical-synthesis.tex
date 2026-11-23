@@ -3,33 +3,111 @@
 \subsection{The Radar Chain as a Workload}
 \label{sec:workload}
 
-Table~\ref{tab:workload} places each stage of the pipeline against the roofline of Section~\ref{sec:background}. The estimates assume single-precision complex data and one read and one write of the data cube per stage; a complex FFT of length $N$ performs about $5\log_2N$ operations on $16N$ bytes, giving roughly $0.31\log_2N$\,FLOP/byte. Every front end stage falls well below the ridge point of about 10\,FLOP/byte. The FFTs in pulse compression and doppler processing reach only about 2--4\,FLOP/byte, the corner turn performs no arithmetic at all. Venter measured this directly - the corner turn and envelope kernels were all bandwidth-limited, with the best corner turn reaching 97\% of a plain copy kernels bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. Denham et al.\ found polarimetric weather-radar products similar memory bound, achieving only about 6\% global-memory efficiency because of the array-of-structures layout \cite{denhamWeatherRadarData2018a}. Yang et al.\ recast CFAR as tensor convolution and shift operations, and most of their GPU time goes on those two low-intensity steps rather than on the threshold logic \cite{yangGPUOrientedDesignsConstant2022a}, whereas Perdana et al.\ run nine elementwise and reduction kernels as separate passes over the same matrix \cite{perdanaRadarSignalProcessing2019}. For these stages, speed comes from moving fewer bytes, through fused passes and suitable data layouts, rather than from more arithmetic througput.
+Table~\ref{tab:workload} places each stage of the chain against the roofline of Section~\ref{sec:background}.
+The estimates assume single-precision complex data and one read and one write of the data cube per stage.
+A complex FFT of length $N$ is conventionally counted as $5N\log_2N$ floating-point operations \cite{cooleyAlgorithmMachineCalculation1965, frigoDesignImplementationFFTW32005},
+so on $16N$ bytes of traffic it reaches about $0.31\log_2N$\,FLOP/byte.
+The FFTs in pulse compression and Doppler processing therefore reach only about 2--4\,FLOP/byte,
+and the corner turn performs no arithmetic at all.
+Every stage from pulse compression to CFAR sits well below the A100 ridge point of about 10\,FLOP/byte \cite{nvidiaA100TensorCore2020}.
+Radio-astronomy work derives arithmetic intensity in this way before implementing a pipeline \cite{vannieuwpoortCorrelatingRadioAstronomy2011},
+but radar studies rarely do.
+
+The few radar studies that measure it agree.
+Venter found the corner turn and envelope kernels bandwidth-limited,
+with the best corner turn reaching 97\% of a plain copy kernel's bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}.
+Denham et al.\ found polarimetric weather-radar products similarly memory-bound,
+achieving only about 6\% global-memory efficiency because of their array-of-structures layout \cite{denhamWeatherRadarData2018a}.
+Yang et al.\ recast CFAR as tensor convolution and shift operations,
+and most of their GPU time goes on those two low-intensity steps rather than on the threshold logic \cite{yangGPUOrientedDesignsConstant2022a}.
+The number of passes matters for the same reason:
+Perdana et al.\ run nine elementwise and reduction kernels as separate passes over the same matrix,
+each reading and writing it again \cite{perdanaRadarSignalProcessing2019}.
+For these stages, speed comes from moving fewer bytes, through fused passes and suitable data layouts,
+rather than from more arithmetic throughput.
+STAP and SAR backprojection are the exceptions.
+STAP's covariance estimation and batched small solves have moderate intensity and are limited by on-chip memory and occupancy \cite{bensonGPUbasedSpacetimeAdaptive2013a},
+while backprojection performs $O(N^3)$ work and is computation-limited \cite{leeArchitectureExplorationBackprojection2021a}.
 
 \begin{table}[t]
-\caption{First-order characterisation of radar chain stages (single-precision
-complex data, one read and one write of the cube per stage).}
-\label{tab:workload}
-\centering
-\footnotesize
-\begin{tabular}{@{}p{1.6cm}p{2.1cm}p{1.4cm}p{2.0cm}@{}}
-\toprule
-Stage & Dominant operation & AI (FLOP/B) & Typically bound by \\
-\midrule
-Pulse compression & Batched FFT, pointwise multiply & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply) & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-Corner turn & Transpose & 0 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-Doppler processing & Short batched FFTs ($N{=}64$--$512$) & $\approx$2--3 & Memory bandwidth; launch overhead for small bursts \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR} \\
-Envelope, scaling, windowing & Elementwise & $<$0.5 & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018a} \\
-CA-CFAR & Sliding-window average & Low; grows with window size & Memory; compute for large windows \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,yangGPUOrientedDesignsConstant2022a} \\
-STAP & Covariance, batched small solves & Moderate & On-chip memory, occupancy \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015b} \\
-SAR backprojection & Per-pixel gather and interpolation & High; $O(N^3)$ work & Computation \cite{leeArchitectureExplorationBackprojection2021a,parkEfficientBackprojectionbasedSynthetic2012} \\
-\bottomrule
-\end{tabular}
+  \caption{First-order characterisation of radar chain stages
+    (single-precision complex data, one read and one write of the cube per stage).}
+  \label{tab:workload}
+  \centering
+  \footnotesize
+  \begin{tabularx}{\columnwidth}{@{}
+    >{\raggedright\arraybackslash}p{1.45cm}
+    >{\raggedright\arraybackslash}X
+    >{\raggedright\arraybackslash}p{1.45cm}
+    >{\raggedright\arraybackslash}X@{}}
+    \toprule
+    Stage & Dominant operation                                                                               & AI (FLOP/B) & Typically bound by \\
+    \midrule
+    Pulse compression
+          & Batched FFT, pointwise multiply, inverse FFT
+          & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply)$^{a}$
+          & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                                                      \\
+    Corner turn
+          & Transpose
+          & 0
+          & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                                                      \\
+    Doppler processing
+          & Short batched FFTs ($N{=}64$--$512$)
+          & $\approx$2--3
+          & Memory bandwidth; launch overhead for small bursts \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                    \\
+    Envelope, scaling, windowing
+          & Elementwise
+          & $<$0.5
+          & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018a}                                          \\
+    CA-CFAR
+          & Sliding-window average
+          & Low; grows with window size
+          & Memory bandwidth; computation for large windows
+    \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,yangGPUOrientedDesignsConstant2022a}                                                           \\
+    STAP
+          & Covariance estimation, batched small solves
+          & Moderate
+          & On-chip memory, occupancy
+    \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015b}                                                           \\
+    SAR backprojection
+          & Per-pixel gather and interpolation
+          & High; $O(N^3)$ work$^{b}$
+          & Computation
+    \cite{leeArchitectureExplorationBackprojection2021a,parkEfficientBackprojectionbasedSynthetic2012}                                          \\
+    \bottomrule
+  \end{tabularx}
+
+  \smallskip
+  \begin{minipage}{\columnwidth}
+    \scriptsize
+    $^{a}$Complex multiply, 6 FLOP over 24 B (signal in, filter in, result out).
+    $^{b}$For an $N\times N$ image formed from $N$ pulses.
+  \end{minipage}
 \end{table}
+
 \subsection{How Performance is Reported}
 \label{sec:reporting}
+Of the 19 implementation studies, six report their headilne speed-up against a serial or single-core CPU,
+seven given no CPU baseline or leave it undefined, and two compare only against their own earlier GPU code.
+Only five use an optimised multithreaded baseline. A weak baseline inflates the ratio: once both sides were optimised, Lee et al. \cite{leeDebunking100XGPU2010b} found a GPU only about 2.5$\times$ faster than a CPU on average, and Park et al. show that careful many-core CPU code closes much of the gap for SAR backprojection \cite{parkEfficientBackprojectionbasedSynthetic2012}. Zhang et al. show the effect within one radar paper: their 270$\times$ headline is against a single core, while their own 12-thread AVX version of the CPU code is already 25--38$\times$ faster than that core \cite{zhangAcceleratingSpaceborneSAR2016a}. This is why Hoefler
+and Belli require the baseline and absolute times to be stated alongside any speedup \cite{hoeflerScientificBenchmarkingParallel2015a}.
+
+How the headline is reported further inflates these ratios. Yang et al report a CFAR speed-up of thousands of times, but at $6000^2$ about 770$\times$ comes from their ensor reformulation running on the same CPU, and only about $65\times$ from the GPU \cite{yangGPUOrientedDesignsConstant2022a}. Li et al.'s 4$\times$ is a ratio of data rates, about $2\times$ at equal load \cite{liDesignHighspeedSoftware2022a}, and Zhao et al.'s 113$\times$ is their best-case data volume, against $50\times$ for the 400MB case they analyse \cite{zhaoGPUAcceleratedSignalProcessing2023}. The one negative result is still reported favourably, Pavlov et al.'s desktop GPU is no faster than the CPU on one algorithm (13 against 13s) and three times slower on the other (60 against 20s), yet they conclude that the approach suits real-time mapping \cite{pavlovImplementationSyntheticAperture2019}.
+
+Overall, analysis rarely goes beyond stage timings. Four studies report profiler metrics or a fraction of peak
+, and three report only a total time with no stage breakdown. Only Venter places every kernel of a chain against its bandwidth and compute boumnds, on a 2008-era GPU with a single receive channel \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. Timing is treated the same way, only Zaknoun reports a spread (mean $\pm$ standard deviation) \cite{zaknounRealTimeGPUacceleratedProcessing}; every other study gives means or single values, and several calim real-time operation without stating a deadline \cite{fangRealtimeImplementationPhased2024,pavlovImplementationSyntheticAperture2019,yangGPUOrientedDesignsConstant2022a}. For a radar chain the question is whether every CPI meets its deadline, which a mean cannot answer. Hoefler and Balli recommend upper percentiles for latency-sensitive systems \cite{hoeflerScientificBenchmarkingParallel2015a}, and measurement-based probabilistic WCET method already exist for CUDA kernels \cite{berezovskyiWCETMeasurementbasedExtreme2014}. Despite this, none of the studies reviewed here applies these methods.
+
 \subsection{Where the Data lives}
 \label{sec:data}
+Gregg and Hazelwood showed that counting host--device trasnfers can make the total time 2--50$\times$ the kernel time, so a GPU result means little unless it states where the data starts and ends \cite{greggWhereDataWhy2011a}. The radar studies that measure transfers do not include this information. For CA-CFAR, Venter et al.'s kernel-only advantage of about 3.6$\times$ over the HPEC Challenge CPU reference fell to about 1.4$\times$ once transfers were included, and the CPU was faster below the 2--3K range bins \cite{venterImplementationCACFARAlgorithm2011}. Transfers took about 29--35\% of Denham et al.'s GPU time \cite{denhamWeatherRadarData2018a}, and about 80\% of Gonzalez and McHargs baseline pulse time, still about half after optimisation \cite{gonzalezCUDALibraryT2OURNAMINT}. Garner gives the clearest case here, the GPU computes about 6.3$\times$ faster than an 8-core CPU, but with pageable memory its copies take about 95\% of its time, and it is only 19\% faster end to end. Other studies leave the timing boundary unclear \cite{zhaoGPUAcceleratedSignalProcessing2023} or exclude trasnfers altogether \cite{yangGPUOrientedDesignsConstant2022a}. Keeping data on the device reduces the cost considerably, Magro et al.'s beamforming kernel spent half its time waiting for copies, but in their full pipeline, with the beams kept on the GPU, transfers were about 17\% of an iteration.
+
+For a memory-bound chain, the host link rather than the GPU sets the throughput ceiling. The CPI of Section~\ref{sec:background} needs more bandwidth than a PCIe~4.0$\times$16 link sustains in practice, and an A100 can make roughly 40 read--write passes over the cube in the time one copy of it crosses that link. Since every stage up to CFAR is memory bound (Section~\ref{sec:workload}), the GPU spends most of each CPI waiting unless the ingest path changes. The constraint is bandwidth relative to CPI size, not latency. Perdana et al.\ argue that PCIe rules out sub-millisecond response \cite{perdanaSurveyGraphicsProcessing2017} but Gonzalez and McHarg report 195$\mu$s per pulse including both transfers \cite{gonzalezCUDALibraryT2OURNAMINT}, and an adaptive-optics GPU pipeline reports mean latencies of at most 235$\mu$s \cite{ferreiraHardRealtimeCore2020a}
+
+The alternatives that woudl raise this ceiling are largely untested for radar. Yang et al. use unified  memory on Jetson boards, but compare it with explicit copies on a different, discrete GPU, so the memory model is confounded with the hardware \cite{yangDistributedRealTimeImage2022a}. Zhang et al. make the opposite choice on the same platform family, and neither study measures the alternative \cite{zhangNearRealTimeImagingAlgorithm2025a}. The only direct measurement of unified memory found it up to 2.2$\times$ slower, but on a pre-Pascal GPU without hardware page faulting \cite{landaverdeInvestigationUnifiedMemory2014}. Zaknoun streams IQ data from the network directly into GPU memory, bypassing the host device, but reports only an ingest rate that was limited by the sender \cite{zaknounRealTimeGPUacceleratedProcessing}, and Garner leaves the Horus link throughput unmeasured (INSERT GANRER). The other variable is reducing the amount of data being sent over the link rather, sending 16-bit IQ and converting on the device, as Zaknoun does, halves the link traffic, and nonuniform quantisation can cut it further while keeping weather-product quality \cite{uekiDataChallengeFully2025}.
+
 \subsection{How the GPU is driven}
 \label{sec:execution}
+
 \subsection{Precision}
 \label{sec:precision}
+
