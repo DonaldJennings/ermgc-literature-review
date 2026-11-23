@@ -97,7 +97,7 @@ How the headline is reported further inflates these ratios. Yang et al.\ report 
 Overall, analysis rarely goes beyond stage timings. Four studies report profiler metrics or a fraction of peak,
 and three report only a total time with no stage breakdown. Only Venter places every kernel of a chain against its bandwidth and compute bounds, on a 2008-era GPU with a single receive channel \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. Timing is treated the same way: only Zaknoun reports a spread (mean $\pm$ standard deviation) \cite{zaknounRealTimeGPUacceleratedProcessing}; every other study gives means or single values, and several claim real-time operation without stating a deadline \cite{fangRealtimeImplementationPhased2024,pavlovImplementationSyntheticAperture2019,yangGPUOrientedDesignsConstant2022a}. For a radar chain the question is whether every CPI meets its deadline, which a mean cannot answer. Hoefler and Belli recommend upper percentiles for latency-sensitive systems \cite{hoeflerScientificBenchmarkingParallel2015a}, and measurement-based probabilistic WCET methods already exist for CUDA kernels \cite{berezovskyiWCETMeasurementbasedExtreme2014}. Despite this, none of the studies reviewed here applies these methods.
 
-\subsection{Where the Data lives}
+\subsection{Where the Data Lives}
 \label{sec:data}
 Gregg and Hazelwood showed that counting host--device transfers can make the total time 2--50$\times$ the kernel time,
 so a GPU result means little unless it states where the data starts and ends \cite{greggWhereDataWhy2011a}.
@@ -136,7 +136,7 @@ Reducing the data is the other lever.
 Sending 16-bit I/Q and converting on the device, as Zaknoun does, halves the link traffic,
 and nonuniform quantisation can cut it further while keeping weather-product quality \cite{uekiDataChallengeFully2025}.
 
-\subsection{How the GPU is driven}
+\subsection{How the GPU is Driven}
 \label{sec:execution}
 Most studies launch one kernel per stage and finish each CPI before starting the next.
 Five use CUDA streams, with modest measured gains.
@@ -146,7 +146,7 @@ although a radar chain repeats the same short kernels every CPI, the case graphs
 Ekelund et al.\ report up to 1.4$\times$ for launch-bound kernels,
 but only for short linear chains and once a graph is reused \cite{ekelundBoostingPerformanceIterative2025a}.
 
-For the memory bound stages of Section~\ref{sec:workload}, fewer passes over memory matter more than launch mechanics. Benson et al.\ keep STAP covariance matrices in shared memory, which is why their custom solver beats a batched cuBLAS one \cite{bensonGPUbasedSpacetimeAdaptive2013a}. Zhang et al.\ merge their pre- and post-processing steps into the adjacent azimuth steps, removing four transposes and four host--device copies \cite{zhangNearRealTimeImagingAlgorithm2025a}. Magro et al.\ fuse unpacking and power computation into their beamformer, noting that a separate kernel would cancel the speedup \cite{magroGPUPoweredCoherentBeamforming2014}. Venter proposed fusing adjacent low-intensity radar kernels in 2014 \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, but no later study here does so.
+For the memory-bound stages of Section~\ref{sec:workload}, fewer passes over memory matter more than launch mechanics. Benson et al.\ keep STAP covariance matrices in shared memory, which is why their custom solver beats a batched cuBLAS one \cite{bensonGPUbasedSpacetimeAdaptive2013a}. Zhang et al.\ merge their pre- and post-processing steps into the adjacent azimuth steps, removing four transposes and four host--device copies \cite{zhangNearRealTimeImagingAlgorithm2025a}. Magro et al.\ fuse unpacking and power computation into their beamformer, noting that a separate kernel would cancel the speedup \cite{magroGPUPoweredCoherentBeamforming2014}. Venter proposed fusing adjacent low-intensity radar kernels in 2014 \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, but no later study here does so.
 
 Tuning is done once, on one GPU. Benson et al.\ ran code tuned for one GPU unchanged on a newer one, where it gained only 18\%, and leave implementations that adapt to parameters and hardware as an open problem \cite{bensonGPUbasedSpacetimeAdaptive2013a}. Magro et al.\ swept thread and accumulator counts empirically, although still on a single GPU \cite{magroGPUPoweredCoherentBeamforming2014}.
 Gawande et al.\ show the cost of a fixed choice:
