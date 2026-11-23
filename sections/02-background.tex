@@ -18,12 +18,10 @@ through Space-Time Adaptive Processing (STAP), which estimates a covariance
 matrix and solves a linear system for each range cell.
 Finally, CFAR detection compares each cell with a noise estimate drawn from its
 neighbouring cells in a sliding window to set an adaptive detection threshold.
-In SAR, image formation uses FFT-based algorithms or backprojects every pulse
-onto every pixel to generate an image \cite{richardsPreviewBasicRadar2022}.
 
 \begin{figure}[!t]
     \centering
-    \resizebox{\columnwidth}{!}{\input{figures/processing-chain}}
+    \resizebox{0.9\linewidth}{!}{\input{figures/processing-chain}}
     \caption{Exemplar receive chain.
         The stages from pulse compression to CFAR detection, the focus of this review,
         run on the CPU and GPU; data volume falls along the chain as processing becomes
@@ -40,17 +38,13 @@ theoretical peak of a PCIe~4.0~$\times$16 link in each direction
 \cite{nvidiaA100TensorCore2020}.
 Measured transfer rates are typically 70--75\% of peak \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR},
 about 22--24\,GB/s, so this CPI alone exceeds what the host link sustains in practice.
-The data volume then falls along the chain, as beamforming combines the
-channels and detection reduces the cube to a list of detections.
 
 \subsection{GPU Architecture Essentials}
-Terminology follows NVIDIA's CUDA programming model; other vendors provide
-equivalent concepts.
 A GPU consists of many streaming multiprocessors (SMs), each executing one or
 more blocks of threads.
 Threads within a block run in warps of 32 under a single-instruction,
 multiple-thread (SIMT) model.
-The GPU hides memory latency by keeping many warps resident and switching between them
+The GPU hides memory latency by keeping many warps resident and switching between them.
 The ratio of resident warps to the maximum an SM supports is its
 \emph{occupancy}.
 High occupancy helps hide latency but is not a goal in itself: kernels can run
@@ -63,9 +57,8 @@ Transfers use direct memory access (DMA) from page-locked (pinned) host
 buffers; pageable memory is first staged through a pinned buffer, which is
 slower \cite{gonzalezCUDALibraryT2OURNAMINT}.
 Copies can overlap with computation when issued in separate streams.
-Unified memory instead presents a single address space to the CPU and GPU and
-migrates pages on demand, whereas an integrated system-on-chip (SoC) shares
-physical DRAM between the two \cite{yangDistributedRealTimeImage2022a}.
+Unified memory presents one address space and migrates pages on demand,
+whereas an integrated system-on-chip (SoC) shares physical DRAM between CPU and GPU \cite{yangDistributedRealTimeImage2022a}.
 Bandwidth falls at each level outwards, most steeply across the host link:
 about 2\,TB/s for HBM on an NVIDIA A100 against 31.5\,GB/s per direction for
 PCIe~4.0 \cite{NVIDIAA100Tensor, nvidiaA100TensorCore2020}.

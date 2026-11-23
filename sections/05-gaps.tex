@@ -3,21 +3,20 @@
 The review shows that GPUs can run a radar chain, but the literature fails to say which resource bounds each stage, or where the GPU stops being fast. Three gaps stand out, and each is open on current hardware.
 
 \paragraph{G1: Workload characterisation}
-The intensities shown in Table~\ref{tab:workload} are first-order estimates. Only Venter has measured them across a complete chain, on a 2008-era GPU with a single receive channel \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, and only four of the 19 studies report profiler metrics or a fraction of peak (Section~\ref{sec:reporting}). No study separates the ingest path from on-device time as the CPI grows, or compares discrete and integrated platforms on the same chain.
-This gap leads to the first open research question
+The intensities in Table~\ref{tab:workload} are first-order estimates.
+Only Venter has measured them across a chain, on a 2008-era GPU with one channel \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR},
+and no study compares platforms on the same chain (Section~\ref{sec:reporting}).
 \emph{RQ1: Which resource (host-link, device-memory bandwidth, launch overhead, on-chip capacity, or compute) bounds each stage of a multi-channel pulse-Doppler and STAP chain on current GPUs, and how does this change with CPI size and platform?}
 
 \paragraph{G2: Ingest and memory model}
-Where transfers are measured they often dominate, and a modest CPI already exceeds what a PCIe~4.0 link sustains (Section~\ref{sec:data}). The alternatives are untested for radar: unified memory has been compared only against explicit copies on different hardware \cite{yangDistributedRealTimeImage2022a}, the most direct measurement of its cost predates hardware page faulting \cite{landaverdeInvestigationUnifiedMemory2014}, and direct network-to-GPU ingest is reported only as a rate \cite{zaknounRealTimeGPUacceleratedProcessing}. This supports the following research question
+Transfers dominate where they are measured, a modest CPI already exceeds what PCIe~4.0 sustains,
+and the alternatives are untested for radar (Section~\ref{sec:data}).
 \emph{RQ2: What share of the CPI budget does data ingest take under pageable, pinned, unified, integrated, and direct (GPUDirect) memory, and at what CPI size does the chain become link-bound?}
 
 \paragraph{G3: Execution model}
-Five studies use streams, with gains of 6--38\% up to about 1.9$\times$,
-but none isolates the execution model from other changes,
-and none uses CUDA Graphs or persistent kernels (Section~\ref{sec:execution}).
-Venter also found that overlap can raise throughput while nearly doubling latency \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR},
-yet only one study reports timing spread (Section~\ref{sec:reporting}),
-so the effect on deadline misses is unknown.
+Streams give modest, confounded gains, no study uses CUDA Graphs or persistent kernels,
+and overlap can raise throughput while nearly doubling latency \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR},
+yet only one study reports timing spread (Sections~\ref{sec:reporting} and~\ref{sec:execution}).
 \emph{RQ3: Which of sequential launches, streams, CUDA Graphs or persistent kernels
   gives the lowest tail latency at a given throughput for a repeating, fixed-shape CPI pipeline?}
 

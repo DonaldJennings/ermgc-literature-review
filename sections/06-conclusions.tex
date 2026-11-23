@@ -1,6 +1,12 @@
 \section{Conclusions}
 \label{sec:conclusion}
-This review asked which implementation strategies, rather than which hardware, explain the performance reported for GPU radar signal processing. Three key findings emerge from this study: every stage from pulse compression to CFAR performs too little arithmetic per byte to be compute-bound, so its cost is set by memory traffic and the number of passes over the data cube (Section~\ref{sec:workload}). Current reporting cannot attribute the gains it claims: baselines are weak or undefined, transfers are timed inconsistently, and timing spread is almost never given (Section~\ref{sec:reporting}). The levers that matter most for such a workload, how data reaches the GPU and how the GPU is driven, are the least tested (Sections~\ref{sec:data} and ~\ref{sec:execution}). RQ1--RQ3 (Section~\ref{sec:gaps}) address these through a single characterisation of a modern, multi-channel chain.
+This review asked which implementation strategies, rather than which hardware,
+explain the performance reported for GPU radar signal processing.
+It found that every stage from pulse compression to CFAR is memory-bound (Section~\ref{sec:workload}),
+that current reporting cannot attribute the gains it claims (Section~\ref{sec:reporting}),
+and that the levers that matter most, data ingest and the execution model, are the least tested
+(Sections~\ref{sec:data} and~\ref{sec:execution}).
+RQ1--RQ3 (Section~\ref{sec:gaps}) address these through a single characterisation of a modern, multi-channel chain.
 
 The grand challenge is to process growing radar data volumes within real-time deadlines on commercial hardware. Meeting it would let more of the receive chain move from bespoke FPGA firmware into software, so that waveforms, modes, and algorithms can be upgraded without new hardware, lowering development cost and shortening upgrade cycles across air defence, space situational awareness, weather, and automotive radar. For weather monitoring, fully digital phased-array radars promise the rapid scanning that timely warnings of severe weather need,
 but their data volume is already a recognised obstacle \cite{uekiDataChallengeFully2025}.

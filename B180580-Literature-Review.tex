@@ -73,17 +73,17 @@
 % As a general rule, do not put math, special symbols or citations
 % in the abstract
 \begin{abstract}
-  Modern radar systems are no longer limited by what they can sense, but by how fast they can process what they sense.
-  As radar becomes critical to airborne systems, autonomous vehicles and weather monitoring,
-  handling growing data volumes in real time has become a pressing engineering challenge.
-  Graphics processing units offer an order-of-magnitude leap in throughput for radar signal processing,
-  yet most published work reports speed-ups without examining why some implementations succeed while others stall,
-  often on memory and data movement rather than arithmetic.
-  Drawing on 39 studies published between 1995 and 2026, identified through citation tracking
-  with searches of IEEE Xplore and the ACM Digital Library to check coverage,
+  Modern radar systems are no longer limited by what they can sense, but by how fast they can process it.
+  As data volumes grow across airborne, automotive and weather radar,
+  real-time processing has become a pressing engineering challenge.
+  Graphics processing units offer an order-of-magnitude leap in throughput,
+  yet most published work reports speed-ups without examining why some implementations succeed while others stall.
+  Drawing on 39 studies published between 1995 and 2026,
+  identified through citation tracking with database searches to check coverage,
   this review appraises 19 GPU implementation studies against six reporting criteria.
   Three findings emerge.
-  Every stage from pulse compression to CFAR is memory-bound, so performance is set by memory traffic and the host link rather than by compute.
+  Every stage from pulse compression to CFAR is memory-bound,
+  so performance is set by memory traffic and the host link rather than by compute.
   Reporting practice cannot attribute the gains claimed:
   only five studies use an optimised multithreaded CPU baseline, and only one reports timing spread.
   The data-ingest path and the execution model, the strategies most likely to matter, are the least tested,
