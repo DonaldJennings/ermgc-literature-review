@@ -38,9 +38,8 @@ as single-precision complex values (8\,B per sample), occupies about 268\,MB.
 Refreshed every 10\,ms, this is roughly 27\,GB/s, about 85\% of the 31.5\,GB/s
 theoretical peak of a PCIe~4.0~$\times$16 link in each direction
 \cite{nvidiaA100TensorCore2020}.
-Measured transfer rates are typically 70--75\% of peak
-\cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}, so the host link alone leaves
-little headroom.
+Measured transfer rates are typically 70--75\% of peak \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR},
+about 22--24\,GB/s, so this CPI alone exceeds what the host link sustains in practice.
 The data volume then falls along the chain, as beamforming combines the
 channels and detection reduces the cube to a list of detections.
 

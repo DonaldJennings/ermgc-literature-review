@@ -99,11 +99,45 @@ Overall, analysis rarely goes beyond stage timings. Four studies report profiler
 
 \subsection{Where the Data lives}
 \label{sec:data}
-Gregg and Hazelwood showed that counting host--device trasnfers can make the total time 2--50$\times$ the kernel time, so a GPU result means little unless it states where the data starts and ends \cite{greggWhereDataWhy2011a}. The radar studies that measure transfers do not include this information. For CA-CFAR, Venter et al.'s kernel-only advantage of about 3.6$\times$ over the HPEC Challenge CPU reference fell to about 1.4$\times$ once transfers were included, and the CPU was faster below the 2--3K range bins \cite{venterImplementationCACFARAlgorithm2011}. Transfers took about 29--35\% of Denham et al.'s GPU time \cite{denhamWeatherRadarData2018a}, and about 80\% of Gonzalez and McHargs baseline pulse time, still about half after optimisation \cite{gonzalezCUDALibraryT2OURNAMINT}. Garner gives the clearest case here, the GPU computes about 6.3$\times$ faster than an 8-core CPU, but with pageable memory its copies take about 95\% of its time, and it is only 19\% faster end to end. Other studies leave the timing boundary unclear \cite{zhaoGPUAcceleratedSignalProcessing2023} or exclude trasnfers altogether \cite{yangGPUOrientedDesignsConstant2022a}. Keeping data on the device reduces the cost considerably, Magro et al.'s beamforming kernel spent half its time waiting for copies, but in their full pipeline, with the beams kept on the GPU, transfers were about 17\% of an iteration.
+Gregg and Hazelwood showed that counting host--device transfers can make the total time 2--50$\times$ the kernel time,
+so a GPU result means little unless it states where the data starts and ends \cite{greggWhereDataWhy2011a}.
+The radar studies that measure transfers bear this out.
+For CA-CFAR, Venter et al.'s kernel-only advantage of about 3.6$\times$ over the HPEC Challenge CPU reference fell to about 1.4$\times$ once transfers were included,
+and the CPU was faster below about 2--3K range bins \cite{venterImplementationCACFARAlgorithm2011}.
+Transfers took 29--35\% of Denham et al.'s GPU time \cite{denhamWeatherRadarData2018a},
+and about 80\% of Gonzalez and McHarg's baseline pulse time, still about half after optimisation \cite{gonzalezCUDALibraryT2OURNAMINT}.
+Garner gives the clearest case:
+the GPU computes 6.3$\times$ faster than an 8-core CPU,
+but with pageable memory its copies take about 95\% of its time,
+and it is only 19\% faster end to end \cite{garnerKEY}. % TODO: key not found in .bib
+Other studies leave the timing boundary unclear \cite{zhaoGPUAcceleratedSignalProcessing2023}
+or exclude transfers altogether \cite{yangGPUOrientedDesignsConstant2022a}.
+Keeping data on the device reduces the cost:
+Magro et al.'s beamforming kernel spent half its time waiting for copies,
+but in their full pipeline, with the beams kept on the GPU, transfers were about 17\% of an iteration \cite{magroGPUPoweredCoherentBeamforming2014}.
 
-For a memory-bound chain, the host link rather than the GPU sets the throughput ceiling. The CPI of Section~\ref{sec:background} needs more bandwidth than a PCIe~4.0$\times$16 link sustains in practice, and an A100 can make roughly 40 read--write passes over the cube in the time one copy of it crosses that link. Since every stage up to CFAR is memory bound (Section~\ref{sec:workload}), the GPU spends most of each CPI waiting unless the ingest path changes. The constraint is bandwidth relative to CPI size, not latency. Perdana et al.\ argue that PCIe rules out sub-millisecond response \cite{perdanaSurveyGraphicsProcessing2017} but Gonzalez and McHarg report 195$\mu$s per pulse including both transfers \cite{gonzalezCUDALibraryT2OURNAMINT}, and an adaptive-optics GPU pipeline reports mean latencies of at most 235$\mu$s \cite{ferreiraHardRealtimeCore2020a}
+For a memory-bound chain, the host link rather than the GPU sets the throughput ceiling.
+The CPI of Section~\ref{sec:background} needs more bandwidth than a PCIe~4.0 ×16 link sustains in practice,
+and an A100 can make roughly 40 read--write passes over the cube in the time one copy of it crosses that link.
+Since every stage up to CFAR is memory-bound (Section~\ref{sec:workload}),
+the GPU spends most of each CPI waiting unless the ingest path changes.
+The constraint is bandwidth relative to CPI size, not latency as such.
+Perdana et al.\ argue that PCIe rules out sub-millisecond response \cite{perdanaSurveyGraphicsProcessing2017},
+but Gonzalez and McHarg report 195\,\textmu s per pulse including both transfers \cite{gonzalezCUDALibraryT2OURNAMINT},
+and an adaptive-optics GPU pipeline reports mean latencies of at most 235\,\textmu s \cite{ferreiraHardRealtimeCore2020a}.
 
-The alternatives that woudl raise this ceiling are largely untested for radar. Yang et al. use unified  memory on Jetson boards, but compare it with explicit copies on a different, discrete GPU, so the memory model is confounded with the hardware \cite{yangDistributedRealTimeImage2022a}. Zhang et al. make the opposite choice on the same platform family, and neither study measures the alternative \cite{zhangNearRealTimeImagingAlgorithm2025a}. The only direct measurement of unified memory found it up to 2.2$\times$ slower, but on a pre-Pascal GPU without hardware page faulting \cite{landaverdeInvestigationUnifiedMemory2014}. Zaknoun streams IQ data from the network directly into GPU memory, bypassing the host device, but reports only an ingest rate that was limited by the sender \cite{zaknounRealTimeGPUacceleratedProcessing}, and Garner leaves the Horus link throughput unmeasured (INSERT GANRER). The other variable is reducing the amount of data being sent over the link rather, sending 16-bit IQ and converting on the device, as Zaknoun does, halves the link traffic, and nonuniform quantisation can cut it further while keeping weather-product quality \cite{uekiDataChallengeFully2025}.
+The alternatives that would raise this ceiling are largely untested for radar.
+Yang et al.\ use unified memory on Jetson boards,
+but compare it with explicit copies on a different, discrete GPU, so the memory model is confounded with the hardware \cite{yangDistributedRealTimeImage2022a}.
+Zhang et al.\ make the opposite choice on the same platform family, and neither study measures the alternative \cite{zhangNearRealTimeImagingAlgorithm2025a}.
+The only direct measurement of unified memory found it up to 2.2$\times$ slower,
+but on a pre-Pascal GPU without hardware page faulting \cite{landaverdeInvestigationUnifiedMemory2014}.
+Zaknoun streams IQ data from the network directly into GPU memory, bypassing the host,
+but reports only an ingest rate that was limited by the sender \cite{zaknounRealTimeGPUacceleratedProcessing},
+and Garner leaves the Horus link throughput unmeasured \cite{garnerKEY}. % TODO: key not found in .bib
+Reducing the data is the other lever.
+Sending 16-bit I/Q and converting on the device, as Zaknoun does, halves the link traffic,
+and nonuniform quantisation can cut it further while keeping weather-product quality \cite{uekiDataChallengeFully2025}.
 
 \subsection{How the GPU is driven}
 \label{sec:execution}
