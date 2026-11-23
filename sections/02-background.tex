@@ -50,9 +50,7 @@ A GPU consists of many streaming multiprocessors (SMs), each executing one or
 more blocks of threads.
 Threads within a block run in warps of 32 under a single-instruction,
 multiple-thread (SIMT) model.
-Rather than minimising the latency of individual threads, the GPU maximises
-throughput by keeping many warps resident and switching between them to hide
-memory latency.
+The GPU hides memory latency by keeping many warps resident and switching between them
 The ratio of resident warps to the maximum an SM supports is its
 \emph{occupancy}.
 High occupancy helps hide latency but is not a goal in itself: kernels can run
@@ -68,8 +66,6 @@ Copies can overlap with computation when issued in separate streams.
 Unified memory instead presents a single address space to the CPU and GPU and
 migrates pages on demand, whereas an integrated system-on-chip (SoC) shares
 physical DRAM between the two \cite{yangDistributedRealTimeImage2022a}.
-On the device, global memory (HBM or GDDR) is backed by an L2 cache shared by
-all SMs, and each SM also has programmer-managed shared memory.
 Bandwidth falls at each level outwards, most steeply across the host link:
 about 2\,TB/s for HBM on an NVIDIA A100 against 31.5\,GB/s per direction for
 PCIe~4.0 \cite{NVIDIAA100Tensor, nvidiaA100TensorCore2020}.
