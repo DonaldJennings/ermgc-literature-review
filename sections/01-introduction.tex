@@ -15,11 +15,7 @@ which overstates the GPU's advantage \cite{leeDebunking100XGPU2010b};
 transfers are timed inconsistently \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR, greggWhereDataWhy2011a};
 timings rarely report spread \cite{hoeflerScientificBenchmarkingParallel2015a};
 and execution features such as CUDA Graphs, designed for repeated fixed-shape workloads like a radar pipeline,
-go unused \cite{ekelundBoostingPerformanceIterative2025a}.
+remain unused \cite{ekelundBoostingPerformanceIterative2025a}.
 It therefore remains unclear which implementation strategies, rather than which hardware, drive the reported gains.
 
-This review addresses the gap from a computational rather than algorithmic perspective. The main review question that is asked is \emph{which implementation strategies, rather than which hardware, explain the performance reported for GPU radar signal processing, and what do current studies leave unmeasured?} The review covers the processing from pulse compression to CFAR detection, where data volumes are largest, with SAR image formation as a compute-intensive contrast. After background on the receive chain and GPUs (Section~\ref{sec:background}) and the review method (Section~\ref{sec:method}),
-the review characterises each stage as a computational workload (Section~\ref{sec:workload}),
-appraises how performance and data movement are reported (Sections~\ref{sec:reporting} and~\ref{sec:data}),
-and identifies the strategies likely to matter most but still untested (Sections~\ref{sec:execution} and~\ref{sec:precision}),
-from which it derives research questions (Section~\ref{sec:gaps}) before concluding (Section~\ref{sec:conclusion}).
+This review addresses the gap from a computational rather than algorithmic perspective. The main review question that is asked is \emph{which implementation strategies, rather than which hardware, explain the performance reported for GPU radar signal processing, and what do current studies leave unmeasured?} The review covers the processing from pulse compression to CFAR detection, where data volumes are largest, with SAR image formation as a compute-intensive contrast. Sections \ref{sec:background}--\ref{sec:method} give background and method, Section \ref{sec:synthesis} synthesises the literature, and Section \ref{sec:gaps} derives research questions

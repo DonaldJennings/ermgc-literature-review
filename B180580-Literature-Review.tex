@@ -59,7 +59,7 @@
 
 \begin{document}
 
-\title{GPU-Accelerated Radar Signal Processing: A Critical Review}
+\title{GPU-Accelerated High-Performance Computing for Real-Time Signal Processing}
 
 % AUTHOR
 \author{\IEEEauthorblockN{Donald Jennings, s2081546}
@@ -82,7 +82,7 @@
   identified through citation tracking with database searches to check coverage,
   this review appraises 19 GPU implementation studies against six reporting criteria.
   Three findings emerge.
-  Every stage from pulse compression to CFAR is memory-bound,
+  Every stage from pulse compression to CFAR, except adaptive beamforming, is memory-bound,
   so performance is set by memory traffic and the host link rather than by compute.
   Reporting practice cannot attribute the gains claimed:
   only five studies use an optimised multithreaded CPU baseline, and only one reports timing spread.

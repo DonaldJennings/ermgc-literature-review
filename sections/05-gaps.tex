@@ -3,22 +3,17 @@
 The review shows that GPUs can run a radar chain, but the literature fails to say which resource bounds each stage, or where the GPU stops being fast. Three gaps stand out, and each is open on current hardware.
 
 \paragraph{G1: Workload characterisation}
-The intensities in Table~\ref{tab:workload} are first-order estimates.
+The arithmetic intensities in Table~\ref{tab:workload} are estimates.
 Only Venter has measured them across a chain, on a 2008-era GPU with one channel \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR},
-and no study compares platforms on the same chain (Section~\ref{sec:reporting}).
-\emph{RQ1: Which resource (host-link, device-memory bandwidth, launch overhead, on-chip capacity, or compute) bounds each stage of a multi-channel pulse-Doppler and STAP chain on current GPUs, and how does this change with CPI size and platform?}
+and no study compares platforms on the same chain (Section~\ref{sec:reporting}). This leads to the first research question, \emph{RQ1: Which resource (host-link, device-memory bandwidth, launch overhead, on-chip capacity, or compute) bounds each stage of a multi-channel pulse-Doppler and STAP chain on current GPUs, and how does this change with CPI size and platform?}
 
 \paragraph{G2: Ingest and memory model}
-Transfers dominate where they are measured, a modest CPI already exceeds what PCIe~4.0 sustains,
+Where transfers are measured, they dominate the execution time. A modest CPI already exceeds what PCIe~4.0 sustains,
 and the alternatives are untested for radar (Section~\ref{sec:data}).
 \emph{RQ2: What share of the CPI budget does data ingest take under pageable, pinned, unified, integrated, and direct (GPUDirect) memory, and at what CPI size does the chain become link-bound?}
 
 \paragraph{G3: Execution model}
-Streams give modest, confounded gains, no study uses CUDA Graphs or persistent kernels,
-and overlap can raise throughput while nearly doubling latency \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR},
-yet only one study reports timing spread (Sections~\ref{sec:reporting} and~\ref{sec:execution}).
-\emph{RQ3: Which of sequential launches, streams, CUDA Graphs or persistent kernels
-  gives the lowest tail latency at a given throughput for a repeating, fixed-shape CPI pipeline?}
+Streams raise throughput, but at a \emph{latency cost}. Venter's double-buffered streams raised throughput by more than 40\%, yet with a single copy engine the overlap could nearly double latency~\cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}. No study uses CUDA Graphs or persistent kernels, although a radar chain repeats the same short kernels every CPI. Only one study reports timing spread~\cite{zaknounRealTimeGPUacceleratedProcessing}, so the \emph{tail-latency} trade-off between these execution models is \emph{unmeasured}. \textit{RQ3:} Which of sequential launches, streams, CUDA Graphs or persistent kernels gives the lowest tail latency at a given throughput for a repeating, fixed-shape CPI pipeline?
 
 G1 sets the baseline that G2 and G3 vary,
 so the three questions form a single study on one chain.
@@ -26,10 +21,7 @@ To avoid the weaknesses of Section~\ref{sec:reporting},
 it should use an optimised multithreaded CPU baseline, time transfers explicitly,
 and report latency distributions rather than means, following the criteria of Table~\ref{tab:rubric}.
 
-Two further gaps are narrower.
-\textbf{G4:} implementations that adapt to parameters and hardware remain Benson et al.'s open problem \cite{bensonGPUbasedSpacetimeAdaptive2013a},
-although auto-tuning has addressed it for a memory-bound kernel in radio astronomy \cite{scloccoRealtimeDedispersionFast2016a}.
-\textbf{G5:} whether 16-bit or integer arithmetic on tensor cores preserves radar detection performance is untested (Section~\ref{sec:precision}).
+\textit{G4:} Radar implementations are tuned once, on one GPU (Section~IV-D); \emph{no radar study} auto-tunes across CPI sizes or hardware, as radio astronomy does~\cite{scloccoRealtimeDedispersionFast2016a}. \textit{G5:} Whether 16-bit or integer tensor-core arithmetic preserves detection performance is \emph{untested} (Section~IV-E).
 Finally, deploying such chains in airborne systems raises timing-assurance and certification questions, such as DO-178C,
 that this review does not address;
 Trompouki and Kosmidis review approaches to certifying GPU software \cite{mariatrompoukiDO178CCertificationGeneralPurpose2021a}.

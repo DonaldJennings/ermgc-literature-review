@@ -30,66 +30,66 @@ STAP's covariance estimation and batched small solves have moderate intensity an
 while backprojection performs $O(N^3)$ work and is computation-limited \cite{leeArchitectureExplorationBackprojection2021a}.
 
 \begin{table}[t]
-  \caption{First-order characterisation of radar chain stages
-    (single-precision complex data, one read and one write of the cube per stage).}
-  \label{tab:workload}
-  \centering
-  \footnotesize
-  \begin{tabularx}{\columnwidth}{@{}
-    >{\raggedright\arraybackslash}p{1.45cm}
-    >{\raggedright\arraybackslash}X
-    >{\raggedright\arraybackslash}p{1.45cm}
-    >{\raggedright\arraybackslash}X@{}}
-    \toprule
-    Stage & Dominant operation                                                                               & AI (FLOP/B) & Typically bound by \\
-    \midrule
-    Pulse compression
-          & Batched FFT, pointwise multiply, inverse FFT
-          & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply)$^{a}$
-          & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                                                      \\
-    Corner turn
-          & Transpose
-          & 0
-          & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                                                      \\
-    Doppler processing
-          & Short batched FFTs ($N{=}64$--$512$)
-          & $\approx$2--3
-          & Memory bandwidth; launch overhead for small bursts \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                    \\
-    Envelope, scaling, windowing
-          & Elementwise
-          & $<$0.5
-          & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018a}                                          \\
-    CA-CFAR
-          & Sliding-window average
-          & Low; grows with window size
-          & Memory bandwidth; computation for large windows
-    \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,yangGPUOrientedDesignsConstant2022a}                                                           \\
-    STAP
-          & Covariance estimation, batched small solves
-          & Moderate
-          & On-chip memory, occupancy
-    \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015a}                                                           \\
-    SAR backprojection
-          & Per-pixel gather and interpolation
-          & High; $O(N^3)$ work$^{b}$
-          & Computation
-    \cite{leeArchitectureExplorationBackprojection2021a,parkEfficientBackprojectionbasedSynthetic2012}                                          \\
-    \bottomrule
-  \end{tabularx}
+      \caption{First-order characterisation of radar chain stages
+            (single-precision complex data, one read and one write of the cube per stage).}
+      \label{tab:workload}
+      \centering
+      \footnotesize
+      \begin{tabularx}{\columnwidth}{@{}
+            >{\raggedright\arraybackslash}p{1.45cm}
+            >{\raggedright\arraybackslash}X
+            >{\raggedright\arraybackslash}p{1.45cm}
+            >{\raggedright\arraybackslash}X@{}}
+            \toprule
+            Stage & Dominant operation                                                                               & AI (FLOP/B) & Typically bound by \\
+            \midrule
+            Pulse compression
+                  & Batched FFT, pointwise multiply, inverse FFT
+                  & $\approx$3.8 (FFT, $N{=}4096$); 0.25 (multiply)$^{a}$
+                  & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                                                      \\
+            Corner turn
+                  & Transpose
+                  & 0
+                  & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                                                      \\
+            Doppler processing
+                  & Short batched FFTs ($N{=}64$--$512$)
+                  & $\approx$2--3
+                  & Memory bandwidth; launch overhead for small bursts \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR}                                    \\
+            Envelope, scaling, windowing
+                  & Elementwise
+                  & $<$0.5
+                  & Memory bandwidth \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,denhamWeatherRadarData2018a}                                          \\
+            CA-CFAR
+                  & Sliding-window average
+                  & Low; grows with window size
+                  & Memory bandwidth; computation for large windows
+            \cite{venterSOFTWAREDEFINEDPULSEDOPPLERRADAR,yangGPUOrientedDesignsConstant2022a}                                                           \\
+            STAP
+                  & Covariance estimation, batched small solves
+                  & Moderate
+                  & On-chip memory, occupancy
+            \cite{bensonGPUbasedSpacetimeAdaptive2013a,gawandePowerPerformanceTradeoffs2015a}                                                           \\
+            SAR backprojection
+                  & Per-pixel gather and interpolation
+                  & High; $O(N^3)$ work$^{b}$
+                  & Computation
+            \cite{leeArchitectureExplorationBackprojection2021a,parkEfficientBackprojectionbasedSynthetic2012}                                          \\
+            \bottomrule
+      \end{tabularx}
 
-  \smallskip
-  \begin{minipage}{\columnwidth}
-    \scriptsize
-    $^{a}$Complex multiply, 6 FLOP over 24 B (signal in, filter in, result out).
-    $^{b}$For an $N\times N$ image formed from $N$ pulses.
-  \end{minipage}
+      \smallskip
+      \begin{minipage}{\columnwidth}
+            \scriptsize
+            $^{a}$Complex multiply, 6 FLOP over 24 B (signal in, filter in, result out).
+            $^{b}$For an $N\times N$ image formed from $N$ pulses.
+      \end{minipage}
 \end{table}
 
 \subsection{How Performance is Reported}
 \label{sec:reporting}
 Of the 19 implementation studies, six report their headline speed-up against a serial or single-core CPU,
 seven give no CPU baseline or leave it undefined, and two compare only against their own earlier GPU code.
-Only five use an optimised multithreaded baseline. A weak baseline inflates the ratio: once both sides were optimised, Lee et al. \cite{leeDebunking100XGPU2010b} found a GPU only about 2.5$\times$ faster than a CPU on average, and Park et al. show that careful many-core CPU code closes much of the gap for SAR backprojection \cite{parkEfficientBackprojectionbasedSynthetic2012}. Zhang et al. show the effect within one radar paper: their 270$\times$ headline is against a single core, while their own 12-thread AVX version of the CPU code is already 25--38$\times$ faster than that core \cite{zhangAcceleratingSpaceborneSAR2016a}. This is why Hoefler
+Only five use an optimised multithreaded baseline, and one of these, Zhang et al., still quotes its headline against a single core~\cite{zhangAcceleratingSpaceborneSAR2016}.. A weak baseline inflates the ratio: once both sides were optimised, Lee et al. \cite{leeDebunking100XGPU2010b} found a GPU only about 2.5$\times$ faster than a CPU on average, and Park et al. show that careful many-core CPU code closes much of the gap for SAR backprojection \cite{parkEfficientBackprojectionbasedSynthetic2012}. Zhang et al., counted in both groups, show the effect: their 270$\times$ headline is against a single core, yet their own 12-thread AVX CPU code is 25--38$\times$ faster than that core~\cite{zhangAcceleratingSpaceborneSAR2016}. This is why Hoefler
 and Belli require the baseline and absolute times to be stated alongside any speedup \cite{hoeflerScientificBenchmarkingParallel2015a}.
 
 How the headline is reported further inflates these ratios. Yang et al.\ report a CFAR speed-up of thousands of times, but at $6000^2$ about 770$\times$ comes from their tensor reformulation running on the same CPU, and only about $65\times$ from the GPU \cite{yangGPUOrientedDesignsConstant2022a}. Li et al.'s 4$\times$ is a ratio of data rates, about $2\times$ at equal load \cite{liDesignHighspeedSoftware2022a}, and Zhao et al.'s 113$\times$ is their best-case data volume, against $50\times$ for the 400MB case they analyse \cite{zhaoGPUAcceleratedSignalProcessing2023}.
